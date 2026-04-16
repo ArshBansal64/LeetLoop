@@ -1,126 +1,285 @@
 # LeetLoop
 
-LeetLoop is a local Python tool that turns your real LeetCode history into a small, high-value daily interview practice plan.
+LeetLoop is a local LeetCode practice planner that uses your actual solve history to recommend what to work on next.
 
-It is designed to prioritize the work that matters most for interview readiness:
+It pulls your solved problems from LeetCode, tracks timestamps and solve counts over time, and generates a small, focused daily plan. The goal is simple: spend your time on the highest-impact problems instead of guessing what to practice.
 
-- stale canonical problems that signal weak retention
-- high-transfer Medium and Hard patterns over low-value filler
-- missing foundational topics that are still clear interview gaps
-- stable recommendations when there has been no new activity
+The system uses a hybrid approach:
 
-Instead of generating generic practice lists, LeetLoop tries to keep the daily plan compact, realistic, and biased toward the problems most likely to improve actual interview performance.
+- Python handles deterministic logic such as cooldown windows, planning bias, and candidate selection
+- GPT handles prioritization, tradeoffs, and the final recommendation
 
-It uses a hybrid planner design:
+---
 
-- Python handles deterministic control like planning shape, cooldown filtering, and candidate generation.
-- GPT chooses the final plan from those candidate pools and writes the final recommendation.
+## What it does
 
-You can run it locally or wire it into GitHub Actions for a daily practice loop.
+- Fetches solved problem history from LeetCode
+- Tracks when you last solved each problem and how many times
+- Detects changes between runs (what you’ve recently worked on)
+- Applies a cooldown so problems you just solved are not immediately recommended again
+- Supports different planning styles depending on your goal
+- Outputs both a readable plan and structured data for debugging
 
-## Goals
-
-- Generate a small, high-value daily LeetCode plan for interview readiness.
-- Prioritize canonical review and meaningful gap-fill over novelty.
-- Keep the planner hybrid, with Python enforcing planning shape, cooldown, and candidate generation, and GPT choosing the final plan from those candidate pools.
-- Preserve run-to-run stability when there is no new activity.
-- Keep outputs debuggable through saved artifacts.
+---
 
 ## How it works
 
-Each run:
+Each run follows the same flow:
 
-1. Pulls your solved-problem history from LeetCode.
-2. Builds a fresh snapshot with timestamps and solve counts.
-3. Diffs against previous runs to detect new activity.
-4. Generates review, gap-fill, fragile, and cooldown candidate buckets in Python.
-5. Sends the snapshot summary and candidate pools to GPT.
-6. Writes both machine-readable and human-readable output files.
+1. Pull your solved problems from LeetCode
+2. Build a snapshot of your current state (timestamps, counts, difficulty)
+3. Compare it with the previous run to detect activity
+4. Generate candidate pools:
+   - review (old, low-count problems)
+   - gap fill (important unsolved problems)
+   - fragile (recent but not yet stable)
+5. Apply config rules (like session size and bias)
+6. Let GPT choose the final plan and explain why
+
+---
+
+## Example output
+
+```
+🔥 Daily LeetCode Plan
+
+Generated (Local): Apr 16, 2026 01:12:39 AM Pacific Daylight Time
+Generated (UTC): 2026-04-16T08:12:39.544787Z
+Run ID: 2026-04-16_08-11-43
+
+━━━━━━━━━━━━━━━━━━━━
+
+TLDR (DO THIS):
+1. Redo Median of Two Sorted Arrays.
+2. Redo Find Elements in a Contaminated Binary Tree.
+3. Learn Edit Distance.
+4. Learn Serialize and Deserialize Binary Tree.
+```
+
+---
+
+## Configuration
+
+Configuration lives in:
+
+```
+config/planner_config.json
+```
+
+Example:
+
+```json
+{
+  "planning_bias": "balanced_growth",
+  "history_days": 7,
+  "max_primary_review_problems": 4
+}
+```
+
+### Planning modes
+
+- `balanced_growth`  
+  Mix of review and new problems (typically 2 and 2)
+
+- `interview_maintenance`  
+  Heavier on review (typically 3 review, 1 new)
+
+- `aggressive_gap_fill`  
+  Focus on new patterns (typically 1 review, 3 new)
+
+---
 
 ## Project structure
 
-- `src/run_pipeline.py` - main pipeline
-- `config/config.json` - non-secret planner config
-- `examples/` - safe sample outputs
-- `history/` - local run outputs only, gitignored
-- `.env.example` - template for local secrets
+```
+LeetLoop/
+│
+├── src/
+│   └── run_pipeline.py
+│
+├── config/
+│   └── planner_config.json
+│
+├── examples/
+│   ├── sample_snapshot.json
+│   ├── sample_plan.json
+│   └── sample_candidate_buckets.json
+│
+├── history/
+│
+├── setup.bat                 # Windows setup script
+├── run_now.bat               # run the planner immediately
+├── schedule_daily.bat        # create/update daily scheduled task
+│
+├── .env.example
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## Output
+
+Each run creates a new folder:
+
+```
+history/<run_id>/
+```
+
+With:
+
+- `snapshot.json`
+- `prompt.txt`
+- `recommendation.json`
+- `recommendation.txt`
+- `plan_memory.json`
+- `candidate_buckets.json`
+
+---
 
 ## Setup
 
-1. Create a local `.env` file based on `.env.example`.
+### Recommended Windows setup
+
+1. Run:
+
+```bat
+setup.bat
+```
+
+This will:
+
+- create a local virtual environment
+- install Python dependencies
+- create `.env` from `.env.example` if it does not already exist
+
+2. Open `.env` and fill in your credentials.
+
+3. Run the planner once:
+
+```bat
+run_now.bat
+```
+
+4. Optionally schedule it daily:
+
+```bat
+schedule_daily.bat
+```
+
+By default, this creates a Windows Task Scheduler job for 08:00.
+
+To choose a different time:
+
+```bat
+schedule_daily.bat 07:30
+```
+
+---
+
+### Manual setup
+
+If you do not want to use the batch scripts:
+
+1. Create a local `.env` file based on `.env.example`
 2. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Update `config/config.json` if you want to tune planning behavior.
-
-Optional:
-
-- Run it locally by hand.
-- Or schedule it with GitHub Actions or another cron-style runner.
-
-## Required environment variables
-
-`.env.example` contains the required keys:
-
-```dotenv
-OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-5.4
-LEETCODE_SESSION=...
-LEETCODE_CSRFTOKEN=...
-```
-
-Notes:
-
-- `OPENAI_API_KEY` is required for plan generation.
-- `LEETCODE_SESSION` and `LEETCODE_CSRFTOKEN` are required for authenticated LeetCode GraphQL access.
-- `.env` is local-only and must never be committed.
-
-## Running the planner
+3. (Optional) Update `config/planner_config.json`
+4. Run:
 
 ```bash
 python src/run_pipeline.py
 ```
 
-Each run writes a timestamped folder under `history/` containing:
+---
 
-- `snapshot.json`
-- `candidate_buckets.json`
-- `prompt.txt`
-- `recommendation.json`
-- `recommendation.txt`
-- `plan_memory.json`
+## Running the planner
 
-The most useful debug artifact is `candidate_buckets.json`, because it shows:
+### Recommended
 
-- the active planning bias
-- the target review/gap shape
-- ranked review candidates
-- ranked gap-fill candidates
-- fragile candidates
+```bat
+run_now.bat
+```
+
+### Direct Python entrypoint
+
+```bash
+python src/run_pipeline.py
+```
+
+---
+
+## Daily automation
+
+For private personal usage, the recommended deployment model is local scheduled execution.
+
+Why:
+
+- `history/` persists naturally across runs
+- your credentials stay local in `.env`
+- your daily recommendation output remains private
+- setup is simpler than splitting execution across public and private repositories
+
+On Windows, `schedule_daily.bat` uses Task Scheduler to run `run_now.bat` daily.
+
+---
+
+## Security notes
+
+- `.env` is ignored by Git
+- `history/` is ignored by Git
+- Example files are safe to publish
+- Do not commit real cookies or API keys
+
+---
+
+## Debugging
+
+If something looks off, start with:
+
+```
+candidate_buckets.json
+```
+
+It shows:
+
+- planning mode
+- target shape
+- candidate pools
 - cooldown exclusions
-- score components for the ranked candidates
 
-## Config behavior
+---
 
-`config/config.json` controls planning shape and curated candidate lists.
+## Design principles
 
-Current supported planning biases:
+- Keep sessions small and realistic
+- Avoid redoing problems too soon
+- Treat old, low-count problems as weak mastery
+- Config controls structure
+- GPT handles prioritization
 
-- `balanced_growth` -> `2 review + 2 gap_fill`
-- `interview_maintenance` -> `3 review + 1 gap_fill`
-- `aggressive_gap_fill` -> `1 review + 3 gap_fill`
+---
 
-Fragile reinforcement is optional and is not part of the default required shape.
+## Roadmap
 
-It also lets you tune:
+- GitHub Actions automation
+- Simple UI / dashboard
+- LeetHub integration
+- Better canonical problem detection
+- Pattern tracking
 
-- curated canonical gap-fill candidates
-- review-priority bonuses for canonical solved problems
-- review deprioritization for noisy solved problems
+---
 
-## Repo name
+## Contributing
 
-Recommended repository name: `LeetLoop`
+Feel free to fork and experiment. The project is designed to be simple and easy to modify.
+
+---
+
+## License
+
+MIT License
