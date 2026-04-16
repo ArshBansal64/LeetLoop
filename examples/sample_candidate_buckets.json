@@ -1,0 +1,72 @@
+{
+  "planning_bias": "balanced_growth",
+  "target_shape": {
+    "review": 2,
+    "gap_fill": 2,
+    "fragile": 0
+  },
+  "candidate_pools": {
+    "review_candidates": [
+      {
+        "title": "Median of Two Sorted Arrays",
+        "slug": "median-of-two-sorted-arrays",
+        "difficulty": "Hard",
+        "count": 2,
+        "last_ts_iso": "2025-04-25T02:26:29Z",
+        "age_hours": 8549.8,
+        "score": 27.21,
+        "why": "old + low-count solved problem with interview value"
+      },
+      {
+        "title": "LRU Cache",
+        "slug": "lru-cache",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts_iso": "2026-01-06T01:00:00Z",
+        "age_hours": 2400.0,
+        "score": 19.5,
+        "why": "old + low-count solved problem with interview value"
+      }
+    ],
+    "gap_fill_candidates": [
+      {
+        "title": "Edit Distance",
+        "slug": "edit-distance",
+        "difficulty": "Hard",
+        "score": 6.0,
+        "why": "major DP pattern",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Serialize and Deserialize Binary Tree",
+        "slug": "serialize-and-deserialize-binary-tree",
+        "difficulty": "Hard",
+        "score": 4.5,
+        "why": "major tree/design interview pattern",
+        "recently_mentioned": true
+      }
+    ],
+    "fragile_candidates": [
+      {
+        "title": "Valid Parenthesis String",
+        "slug": "valid-parenthesis-string",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts_iso": "2026-04-11T01:11:00Z",
+        "age_hours": 127.0,
+        "score": 5.22,
+        "why": "recent but outside cooldown and still low-count / fragile"
+      }
+    ],
+    "cooldown_excluded": [
+      {
+        "title": "Daily Temperatures",
+        "slug": "daily-temperatures",
+        "difficulty": "Medium",
+        "count": 1,
+        "age_hours": 2.5,
+        "reason": "solved within last 24 hours"
+      }
+    ]
+  }
+}
