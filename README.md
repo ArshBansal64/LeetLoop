@@ -2,6 +2,15 @@
 
 LeetLoop is a local Python tool that turns your real LeetCode history into a small, high-value daily interview practice plan.
 
+It is designed to prioritize the work that matters most for interview readiness:
+
+- stale canonical problems that signal weak retention
+- high-transfer Medium and Hard patterns over low-value filler
+- missing foundational topics that are still clear interview gaps
+- stable recommendations when there has been no new activity
+
+Instead of generating generic practice lists, LeetLoop tries to keep the daily plan compact, realistic, and biased toward the problems most likely to improve actual interview performance.
+
 It uses a hybrid planner design:
 
 - Python handles deterministic control like planning shape, cooldown filtering, and candidate generation.
@@ -12,6 +21,7 @@ You can run it locally or wire it into GitHub Actions for a daily practice loop.
 ## Goals
 
 - Generate a small, high-value daily LeetCode plan for interview readiness.
+- Prioritize canonical review and meaningful gap-fill over novelty.
 - Keep the planner hybrid, with Python enforcing planning shape, cooldown, and candidate generation, and GPT choosing the final plan from those candidate pools.
 - Preserve run-to-run stability when there is no new activity.
 - Keep outputs debuggable through saved artifacts.
