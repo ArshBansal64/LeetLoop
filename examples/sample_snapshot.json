@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-04-15T12:14:49Z",
+  "problem_count": 3,
+  "timestamp_failures_count": 0,
+  "timestamp_failures_sample": [],
+  "problems": [
+    {
+      "title": "Two Sum",
+      "slug": "two-sum",
+      "frontend_id": "1",
+      "difficulty": "Easy",
+      "last_ts": 1776248144,
+      "count": 5
+    },
+    {
+      "title": "LRU Cache",
+      "slug": "lru-cache",
+      "frontend_id": "146",
+      "difficulty": "Medium",
+      "last_ts": 1767639946,
+      "count": 1
+    },
+    {
+      "title": "Median of Two Sorted Arrays",
+      "slug": "median-of-two-sorted-arrays",
+      "frontend_id": "4",
+      "difficulty": "Hard",
+      "last_ts": 1745547989,
+      "count": 2
+    }
+  ]
+}

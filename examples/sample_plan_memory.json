@@ -1,0 +1,23 @@
+{
+  "run_id": "2026-04-15_12-40-24",
+  "generated_at": "2026-04-15T12:40:24Z",
+  "date": "2026-04-15",
+  "tldr": "Review stale high-value problems, add one missing flagship pattern, and avoid very recent comfort problems.",
+  "why_now": "No new activity changed the highest-value recommendation.",
+  "primary_action": "Redo Median of Two Sorted Arrays and LRU Cache.",
+  "secondary_action": "Do one new sliding-window flagship problem.",
+  "stretch_action": "Re-solve one recent hard with count = 1.",
+  "do_not_focus_on": [
+    "Very recent repeated easy problems"
+  ],
+  "reasoning": {
+    "summary": "This is a compact saved recommendation for future planner memory.",
+    "detailed": "Plan memory is intentionally compact and structured so it can be reused safely in future runs without recursive prompt bloat."
+  },
+  "insights": [
+    "Use compact memory only.",
+    "Do not store full prompt text."
+  ],
+  "focus_mode": "mixed",
+  "confidence": "high"
+}

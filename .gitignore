@@ -1,0 +1,14 @@
+.env
+history/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.vscode/
+.idea/
+src/run_pipeline_old.py
+src/run_pipeline_old2.py
+src/run_pipeline_old_3.py
+src/run_pipeline_old_4.py
+src/run_pipeline_old5.py
+src/run_pipeline_old6.py

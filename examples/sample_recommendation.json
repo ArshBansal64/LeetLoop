@@ -1,0 +1,23 @@
+{
+  "run_id": "2026-04-15_12-40-24",
+  "generated_at": "2026-04-15T12:40:24Z",
+  "date": "2026-04-15",
+  "tldr": "Review stale high-value problems, add one missing flagship pattern, and avoid spending time on very recent comfort problems.",
+  "why_now": "The profile shows broad activity, but old low-count classics still look fragile and are higher value than more easy volume.",
+  "primary_action": "Redo Median of Two Sorted Arrays and LRU Cache.",
+  "secondary_action": "Do one new sliding-window flagship problem like Minimum Window Substring.",
+  "stretch_action": "Re-solve one recent hard with count = 1.",
+  "do_not_focus_on": [
+    "Very recent repeated easy problems"
+  ],
+  "reasoning": {
+    "summary": "The highest-value work is old low-count review plus one important missing pattern.",
+    "detailed": "This recommendation prioritizes stale high-transfer problems first, because older low-count solves are the best proxy for fragile mastery. It also keeps one slot for gap filling so the plan does not become only review."
+  },
+  "insights": [
+    "Recent activity is healthy, so the issue is retention, not motivation.",
+    "Hard coverage is thinner than medium coverage."
+  ],
+  "focus_mode": "mixed",
+  "confidence": "high"
+}

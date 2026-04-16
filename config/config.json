@@ -1,0 +1,100 @@
+{
+  "planning_bias": "balanced_growth",
+  "history_days": 7,
+  "max_primary_review_problems": 4,
+  "comment": "Controls planning behavior: interview_maintenance, balanced_growth, aggressive_gap_fill",
+  "review_priority_bonus": {
+    "median-of-two-sorted-arrays": 6.0,
+    "lru-cache": 5.5,
+    "merge-k-sorted-lists": 5.0,
+    "word-break": 4.5,
+    "course-schedule-ii": 4.5,
+    "implement-trie-prefix-tree": 4.0,
+    "jump-game": 3.5,
+    "container-with-most-water": 3.5,
+    "basic-calculator-ii": 3.5,
+    "unique-paths": 3.0
+  },
+  "review_deprioritized_slugs": [
+    "find-elements-in-a-contaminated-binary-tree",
+    "equal-sum-grid-partition-i",
+    "count-subarrays-of-length-three-with-a-condition",
+    "a-number-after-a-double-reversal",
+    "score-of-a-string",
+    "counting-words-with-a-given-prefix"
+  ],
+  "canonical_gap_candidates": [
+    {
+      "title": "Minimum Window Substring",
+      "slug": "minimum-window-substring",
+      "difficulty": "Hard",
+      "reason": "elite sliding-window flagship"
+    },
+    {
+      "title": "Daily Temperatures",
+      "slug": "daily-temperatures",
+      "difficulty": "Medium",
+      "reason": "canonical monotonic-stack problem"
+    },
+    {
+      "title": "Serialize and Deserialize Binary Tree",
+      "slug": "serialize-and-deserialize-binary-tree",
+      "difficulty": "Hard",
+      "reason": "major tree/design interview pattern"
+    },
+    {
+      "title": "Largest Rectangle in Histogram",
+      "slug": "largest-rectangle-in-histogram",
+      "difficulty": "Hard",
+      "reason": "canonical hard monotonic-stack problem"
+    },
+    {
+      "title": "Edit Distance",
+      "slug": "edit-distance",
+      "difficulty": "Hard",
+      "reason": "major DP pattern"
+    },
+    {
+      "title": "Task Scheduler",
+      "slug": "task-scheduler",
+      "difficulty": "Medium",
+      "reason": "common counting/greedy scheduling pattern"
+    },
+    {
+      "title": "Kth Largest Element in an Array",
+      "slug": "kth-largest-element-in-an-array",
+      "difficulty": "Medium",
+      "reason": "common heap/select pattern"
+    },
+    {
+      "title": "Word Ladder",
+      "slug": "word-ladder",
+      "difficulty": "Hard",
+      "reason": "classic BFS shortest-path pattern"
+    },
+    {
+      "title": "Binary Tree Maximum Path Sum",
+      "slug": "binary-tree-maximum-path-sum",
+      "difficulty": "Hard",
+      "reason": "high-value tree DP interview anchor"
+    },
+    {
+      "title": "Find Median from Data Stream",
+      "slug": "find-median-from-data-stream",
+      "difficulty": "Hard",
+      "reason": "canonical two-heaps design problem"
+    },
+    {
+      "title": "Longest Increasing Subsequence",
+      "slug": "longest-increasing-subsequence",
+      "difficulty": "Medium",
+      "reason": "core DP and binary-search pattern"
+    },
+    {
+      "title": "Number of Islands",
+      "slug": "number-of-islands",
+      "difficulty": "Medium",
+      "reason": "canonical graph traversal interview anchor"
+    }
+  ]
+}
