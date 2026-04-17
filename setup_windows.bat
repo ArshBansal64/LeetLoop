@@ -78,33 +78,55 @@ if not exist ".env" (
     )
 
     echo.
-    echo You need an OpenAI API key to use LeetLoop
-    echo Get one at: https://platform.openai.com/api-keys
+    echo You need three values to use LeetLoop:
+    echo   1. OPENAI_API_KEY
+    echo   2. LEETCODE_SESSION
+    echo   3. LEETCODE_CSRFTOKEN
+    echo.
+    echo OpenAI API key:
+    echo   https://platform.openai.com/api-keys
+    echo.
+    echo LeetCode cookie values:
+    echo   1. Sign in to https://leetcode.com in your browser
+    echo   2. Open Developer Tools ^(F12^)
+    echo   3. Go to Application/Storage ^> Cookies ^> https://leetcode.com
+    echo   4. Copy the values for LEETCODE_SESSION and csrftoken
     echo.
 
     set /p OPENAI_KEY=Enter your OpenAI API key: 
+    set /p LEETCODE_SESSION_VALUE=Enter your LEETCODE_SESSION value: 
+    set /p LEETCODE_CSRF_VALUE=Enter your LEETCODE_CSRFTOKEN value: 
 
     if "!OPENAI_KEY!"=="" (
-        echo ERROR: API key is required
+        echo ERROR: OPENAI_API_KEY is required
+        pause
+        exit /b 1
+    )
+    if "!LEETCODE_SESSION_VALUE!"=="" (
+        echo ERROR: LEETCODE_SESSION is required
+        pause
+        exit /b 1
+    )
+    if "!LEETCODE_CSRF_VALUE!"=="" (
+        echo ERROR: LEETCODE_CSRFTOKEN is required
         pause
         exit /b 1
     )
 
     > .tmp_openai_key.txt echo(!OPENAI_KEY!
-    python -c "from pathlib import Path; p = Path('.env'); key = Path('.tmp_openai_key.txt').read_text(encoding='utf-8').strip(); content = p.read_text(encoding='utf-8'); content = content.replace('OPENAI_API_KEY=your_openai_api_key_here', 'OPENAI_API_KEY=' + key); p.write_text(content, encoding='utf-8')"
+    > .tmp_leetcode_session.txt echo(!LEETCODE_SESSION_VALUE!
+    > .tmp_leetcode_csrf.txt echo(!LEETCODE_CSRF_VALUE!
+    python -c "from pathlib import Path; p = Path('.env'); content = p.read_text(encoding='utf-8'); openai_key = Path('.tmp_openai_key.txt').read_text(encoding='utf-8').strip(); leetcode_session = Path('.tmp_leetcode_session.txt').read_text(encoding='utf-8').strip(); leetcode_csrf = Path('.tmp_leetcode_csrf.txt').read_text(encoding='utf-8').strip(); content = content.replace('OPENAI_API_KEY=your_openai_api_key_here', 'OPENAI_API_KEY=' + openai_key); content = content.replace('LEETCODE_SESSION=your_leetcode_session_here', 'LEETCODE_SESSION=' + leetcode_session); content = content.replace('LEETCODE_CSRFTOKEN=your_leetcode_csrf_here', 'LEETCODE_CSRFTOKEN=' + leetcode_csrf); p.write_text(content, encoding='utf-8')"
     del /q .tmp_openai_key.txt >nul 2>nul
+    del /q .tmp_leetcode_session.txt >nul 2>nul
+    del /q .tmp_leetcode_csrf.txt >nul 2>nul
     if errorlevel 1 (
-        echo ERROR: Failed to update .env with the OpenAI API key
+        echo ERROR: Failed to update .env with the required values
         pause
         exit /b 1
     )
 
     echo [OK] Configuration saved to .env
-    echo.
-    echo Remaining required fields are still in .env with placeholder values:
-    echo   - LEETCODE_SESSION
-    echo   - LEETCODE_CSRFTOKEN
-    echo Fill those in before starting the app.
 ) else (
     echo [OK] .env already configured
 )
@@ -115,7 +137,7 @@ echo Setup Complete!
 echo ======================================
 echo.
 echo Next steps:
-echo   1. Open .env and fill in any remaining placeholder values
+echo   1. Review .env if you want to confirm the saved values
 echo   2. Run .\run_app.bat
 echo.
 echo Or double-click run_app.bat in File Explorer to start LeetLoop.

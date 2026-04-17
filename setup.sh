@@ -65,18 +65,39 @@ if [ ! -f ".env" ]; then
     fi
 
     echo ""
-    echo "You need an OpenAI API key to use LeetLoop"
-    echo "Get one at: https://platform.openai.com/api-keys"
+    echo "You need three values to use LeetLoop:"
+    echo "  1. OPENAI_API_KEY"
+    echo "  2. LEETCODE_SESSION"
+    echo "  3. LEETCODE_CSRFTOKEN"
+    echo ""
+    echo "OpenAI API key:"
+    echo "  https://platform.openai.com/api-keys"
+    echo ""
+    echo "LeetCode cookie values:"
+    echo "  1. Sign in to https://leetcode.com in your browser"
+    echo "  2. Open Developer Tools"
+    echo "  3. Go to Application/Storage -> Cookies -> https://leetcode.com"
+    echo "  4. Copy the values for LEETCODE_SESSION and csrftoken"
     echo ""
 
     read -p "Enter your OpenAI API key: " OPENAI_KEY
+    read -p "Enter your LEETCODE_SESSION value: " LEETCODE_SESSION_VALUE
+    read -p "Enter your LEETCODE_CSRFTOKEN value: " LEETCODE_CSRF_VALUE
 
     if [ -z "$OPENAI_KEY" ]; then
-        echo "ERROR: API key is required"
+        echo "ERROR: OPENAI_API_KEY is required"
+        exit 1
+    fi
+    if [ -z "$LEETCODE_SESSION_VALUE" ]; then
+        echo "ERROR: LEETCODE_SESSION is required"
+        exit 1
+    fi
+    if [ -z "$LEETCODE_CSRF_VALUE" ]; then
+        echo "ERROR: LEETCODE_CSRFTOKEN is required"
         exit 1
     fi
 
-    OPENAI_KEY="$OPENAI_KEY" python3 - <<'PY'
+    OPENAI_KEY="$OPENAI_KEY" LEETCODE_SESSION_VALUE="$LEETCODE_SESSION_VALUE" LEETCODE_CSRF_VALUE="$LEETCODE_CSRF_VALUE" python3 - <<'PY'
 import os
 from pathlib import Path
 path = Path('.env')
@@ -85,16 +106,19 @@ content = content.replace(
     'OPENAI_API_KEY=your_openai_api_key_here',
     f"OPENAI_API_KEY={os.environ['OPENAI_KEY']}"
 )
+content = content.replace(
+    'LEETCODE_SESSION=your_leetcode_session_here',
+    f"LEETCODE_SESSION={os.environ['LEETCODE_SESSION_VALUE']}"
+)
+content = content.replace(
+    'LEETCODE_CSRFTOKEN=your_leetcode_csrf_here',
+    f"LEETCODE_CSRFTOKEN={os.environ['LEETCODE_CSRF_VALUE']}"
+)
 path.write_text(content, encoding='utf-8')
 PY
     chmod 600 .env
 
     echo "[OK] Configuration saved to .env"
-    echo ""
-    echo "Remaining required fields are still in .env with placeholder values:"
-    echo "  - LEETCODE_SESSION"
-    echo "  - LEETCODE_CSRFTOKEN"
-    echo "Fill those in before starting the app."
 else
     echo "[OK] .env already configured"
 fi
@@ -105,7 +129,7 @@ echo "Setup Complete!"
 echo "======================================"
 echo ""
 echo "Next steps:"
-echo "  1. Open .env and fill in any remaining placeholder values"
+echo "  1. Review .env if you want to confirm the saved values"
 echo "  2. Run ./run_app.sh"
 echo ""
 echo "Or make run_app.sh executable, then run it to start LeetLoop:"
