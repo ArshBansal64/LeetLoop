@@ -15,10 +15,27 @@ The system uses a hybrid approach:
 
 - Fetches solved problem history from LeetCode
 - Tracks when you last solved each problem and how many times
-- Detects changes between runs (what you’ve recently worked on)
+- Detects changes between runs
+- Preserves recommendation history across runs through the local `history/` folder
 - Applies a cooldown so problems you just solved are not immediately recommended again
 - Supports different planning styles depending on your goal
 - Outputs both a readable plan and structured data for debugging
+
+---
+
+## Recommended usage
+
+The recommended way to use LeetLoop is as a small local app.
+
+The app:
+
+- shows your latest recommendation in a browser
+- lets you trigger a run manually with a button
+- keeps a daily run time in local config
+- runs the planner on a built-in schedule without relying on a hidden OS task
+- keeps all state, credentials, and recommendation history on your own machine
+
+This is simpler and less opaque than relying on a background scheduled script alone.
 
 ---
 
@@ -38,83 +55,243 @@ Each run follows the same flow:
 
 ---
 
-## Example output
-
-```
-🔥 Daily LeetCode Plan
-
-Generated (Local): Apr 16, 2026 01:12:39 AM Pacific Daylight Time
-Generated (UTC): 2026-04-16T08:12:39.544787Z
-Run ID: 2026-04-16_08-11-43
-
-━━━━━━━━━━━━━━━━━━━━
-
-TLDR (DO THIS):
-1. Redo Median of Two Sorted Arrays.
-2. Redo Find Elements in a Contaminated Binary Tree.
-3. Learn Edit Distance.
-4. Learn Serialize and Deserialize Binary Tree.
-```
-
----
-
 ## Configuration
 
-Configuration lives in:
+Planner configuration lives in:
 
 ```
-config/planner_config.json
+config/config.json
 ```
 
-Example:
+App configuration lives in:
 
-```json
-{
-  "planning_bias": "balanced_growth",
-  "history_days": 7,
-  "max_primary_review_problems": 4
-}
 ```
+config/app_config.json
+```
+
+`config/config.json` controls planning behavior such as planning bias and candidate tuning.
+
+`config/app_config.json` controls local app behavior such as:
+
+- host
+- port
+- daily run time
+- whether the browser should open when the app starts
 
 ### Planning modes
 
-- `balanced_growth`  
+- `balanced_growth`
   Mix of review and new problems (typically 2 and 2)
 
-- `interview_maintenance`  
+- `interview_maintenance`
   Heavier on review (typically 3 review, 1 new)
 
-- `aggressive_gap_fill`  
+- `aggressive_gap_fill`
   Focus on new patterns (typically 1 review, 3 new)
 
 ---
 
 ## Project structure
 
-```
+```text
 LeetLoop/
-│
-├── src/
-│   └── run_pipeline.py
-│
-├── config/
-│   └── planner_config.json
-│
-├── examples/
-│   ├── sample_snapshot.json
-│   ├── sample_plan.json
-│   └── sample_candidate_buckets.json
-│
-├── history/
-│
-├── setup.bat                 # Windows setup script
-├── run_now.bat               # run the planner immediately
-├── schedule_daily.bat        # create/update daily scheduled task
-│
-├── .env.example
-├── requirements.txt
-└── README.md
+|-- src/
+|   |-- run_pipeline.py         # Core planner logic
+|   |-- run_service.py          # Web UI server and background agent
+|   `-- app_launcher.py         # Entry point for bundled executable
+|-- build_scripts/
+|   |-- build.py                # PyInstaller build script
+|   `-- README.md               # Build instructions
+|-- config/
+|   |-- config.json             # Planner configuration
+|   `-- app_config.json         # Local app defaults
+|-- examples/
+|   |-- sample_snapshot.json
+|   |-- sample_recommendation.json
+|   |-- sample_candidate_buckets.json
+|   `-- sample_plan_memory.json
+|-- history/                    # Local run output (gitignored)
+|-- setup_windows.bat           # Windows setup (source install)
+|-- setup.sh                    # macOS/Linux setup (source install)
+|-- run_app.bat                 # Windows app launcher
+|-- run_app.sh                  # macOS/Linux app launcher
+|-- requirements.txt            # Runtime dependencies
+|-- requirements-build.txt      # Build-only dependencies
+|-- .env.example
+|-- .gitattributes
+`-- README.md
 ```
+
+---
+
+## Setup
+
+### Recommended: Run from Source
+
+#### Windows
+
+1. Clone the repository.
+2. Run:
+
+```bat
+setup_windows.bat
+```
+
+This will:
+- create a local virtual environment
+- install Python dependencies
+- create `.env` from `.env.example`
+- prompt for your OpenAI API key
+- preserve the remaining required fields in `.env`
+
+3. Open `.env` and fill in any remaining placeholder values:
+- `LEETCODE_SESSION`
+- `LEETCODE_CSRFTOKEN`
+
+4. Start the app:
+
+```bat
+run_app.bat
+```
+
+#### macOS / Linux
+
+1. Clone the repository.
+2. Run:
+
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+This will:
+- create a local virtual environment
+- install Python dependencies
+- create `.env` from `.env.example`
+- prompt for your OpenAI API key
+- preserve the remaining required fields in `.env`
+
+3. Open `.env` and fill in any remaining placeholder values:
+- `LEETCODE_SESSION`
+- `LEETCODE_CSRFTOKEN`
+
+4. Start the app:
+
+```bash
+chmod +x run_app.sh
+./run_app.sh
+```
+
+### Manual Setup (Advanced)
+
+1. Copy `.env.example` to `.env`.
+2. Fill in:
+- `OPENAI_API_KEY`
+- `LEETCODE_SESSION`
+- `LEETCODE_CSRFTOKEN`
+
+3. Install dependencies:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+pip install -r requirements.txt
+```
+
+4. Start the app:
+
+```bash
+python src/run_service.py --ui
+```
+
+Or run the planner directly once:
+
+```bash
+python src/run_pipeline.py
+```
+
+### Building Your Own Executable
+
+Standalone executable builds are a developer workflow, not the primary setup path.
+
+1. Install build dependencies:
+
+```bash
+pip install -r requirements-build.txt
+```
+
+2. Build the executable:
+
+```bash
+python build_scripts/build.py
+```
+
+The executable will be created in `dist/`.
+
+---
+
+## Required environment variables
+
+`.env.example` contains the required keys:
+
+```dotenv
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-5.4
+LEETCODE_SESSION=...
+LEETCODE_CSRFTOKEN=...
+```
+
+Notes:
+
+- `OPENAI_API_KEY` is required for plan generation
+- `LEETCODE_SESSION` and `LEETCODE_CSRFTOKEN` are required for authenticated LeetCode GraphQL access
+- `.env` is local-only and must never be committed
+
+---
+
+## Running LeetLoop
+
+### Recommended app mode
+
+On Windows:
+
+```bat
+run_app.bat
+```
+
+On macOS / Linux:
+
+```bash
+./run_app.sh
+```
+
+This starts the local web app and embedded scheduler.
+
+### Direct Python entrypoints
+
+Run the app directly:
+
+```bash
+python src/run_service.py --ui
+```
+
+Run the planner once without the UI:
+
+```bash
+python src/run_pipeline.py
+```
+
+## Daily automation
+
+LeetLoop now supports daily local automation through the built-in app scheduler.
+
+Why this is the recommended model:
+
+- `history/` persists naturally across runs
+- your credentials stay local in `.env`
+- your daily recommendation output remains private
+- the schedule is visible inside the app rather than hidden in the OS
+- the same app can both display the latest plan and trigger new runs
 
 ---
 
@@ -137,106 +314,6 @@ With:
 
 ---
 
-## Setup
-
-### Recommended Windows setup
-
-1. Run:
-
-```bat
-setup.bat
-```
-
-This will:
-
-- create a local virtual environment
-- install Python dependencies
-- create `.env` from `.env.example` if it does not already exist
-
-2. Open `.env` and fill in your credentials.
-
-3. Run the planner once:
-
-```bat
-run_now.bat
-```
-
-4. Optionally schedule it daily:
-
-```bat
-schedule_daily.bat
-```
-
-By default, this creates a Windows Task Scheduler job for 08:00.
-
-To choose a different time:
-
-```bat
-schedule_daily.bat 07:30
-```
-
----
-
-### Manual setup
-
-If you do not want to use the batch scripts:
-
-1. Create a local `.env` file based on `.env.example`
-2. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. (Optional) Update `config/planner_config.json`
-4. Run:
-
-```bash
-python src/run_pipeline.py
-```
-
----
-
-## Running the planner
-
-### Recommended
-
-```bat
-run_now.bat
-```
-
-### Direct Python entrypoint
-
-```bash
-python src/run_pipeline.py
-```
-
----
-
-## Daily automation
-
-For private personal usage, the recommended deployment model is local scheduled execution.
-
-Why:
-
-- `history/` persists naturally across runs
-- your credentials stay local in `.env`
-- your daily recommendation output remains private
-- setup is simpler than splitting execution across public and private repositories
-
-On Windows, `schedule_daily.bat` uses Task Scheduler to run `run_now.bat` daily.
-
----
-
-## Security notes
-
-- `.env` is ignored by Git
-- `history/` is ignored by Git
-- Example files are safe to publish
-- Do not commit real cookies or API keys
-
----
-
 ## Debugging
 
 If something looks off, start with:
@@ -251,6 +328,7 @@ It shows:
 - target shape
 - candidate pools
 - cooldown exclusions
+- score components for ranked candidates
 
 ---
 
@@ -261,16 +339,26 @@ It shows:
 - Treat old, low-count problems as weak mastery
 - Config controls structure
 - GPT handles prioritization
+- Keep private user data local by default
+
+---
+
+## Security notes
+
+- `.env` is ignored by Git
+- `history/` is ignored by Git
+- example files are safe to publish
+- do not commit real cookies or API keys
 
 ---
 
 ## Roadmap
 
-- GitHub Actions automation
-- Simple UI / dashboard
-- LeetHub integration
-- Better canonical problem detection
-- Pattern tracking
+- private phone notifications
+- richer local dashboard
+- better canonical problem detection
+- pattern tracking
+- easier cross-platform app packaging
 
 ---
 

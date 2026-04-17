@@ -4,8 +4,15 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.venv/
 .vscode/
 .idea/
+.DS_Store
+background_agent.log
+config/agent.pid
+build/
+dist/
+*.spec
 src/run_pipeline_old.py
 src/run_pipeline_old2.py
 src/run_pipeline_old_3.py

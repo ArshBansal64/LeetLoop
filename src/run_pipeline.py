@@ -2,11 +2,14 @@ from dotenv import load_dotenv
 
 import json
 import os
+import re
 import datetime
 import webbrowser
 import requests
 import time
+import sys
 from typing import Any, Dict, List, Tuple
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
@@ -18,6 +21,7 @@ os.makedirs(HISTORY_DIR, exist_ok=True)
 
 GRAPHQL_URL = "https://leetcode.com/graphql"
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
+DEFAULT_TIMEZONE = "America/Los_Angeles"
 
 COOLDOWN_HOURS = 24
 FRAGILE_MIN_HOURS = 24
@@ -88,24 +92,190 @@ OBSCURE_CONTEST_KEYWORDS = (
     "grid-game",
 )
 
+# Comprehensive internal mapping of LeetCode problems
+# Maps normalized problem title (lowercase) to (frontend_id, slug)
+PROBLEM_LOOKUP = {
+    "two sum": (1, "two-sum"),
+    "add two numbers": (2, "add-two-numbers"),
+    "longest substring without repeating characters": (3, "longest-substring-without-repeating-characters"),
+    "median of two sorted arrays": (4, "median-of-two-sorted-arrays"),
+    "longest palindromic substring": (5, "longest-palindromic-substring"),
+    "zigzag conversion": (6, "zigzag-conversion"),
+    "reverse integer": (7, "reverse-integer"),
+    "string to integer (atoi)": (8, "string-to-integer-atoi"),
+    "palindrome number": (9, "palindrome-number"),
+    "regular expression matching": (10, "regular-expression-matching"),
+    "container with most water": (11, "container-with-most-water"),
+    "integer to roman": (12, "integer-to-roman"),
+    "roman to integer": (13, "roman-to-integer"),
+    "longest common prefix": (14, "longest-common-prefix"),
+    "3sum": (15, "3sum"),
+    "3sum closest": (16, "3sum-closest"),
+    "letter combinations of a phone number": (17, "letter-combinations-of-a-phone-number"),
+    "4sum": (18, "4sum"),
+    "remove nth node from end of list": (19, "remove-nth-node-from-end-of-list"),
+    "valid parentheses": (20, "valid-parentheses"),
+    "merge two sorted lists": (21, "merge-two-sorted-lists"),
+    "generate parentheses": (22, "generate-parentheses"),
+    "merge k sorted lists": (23, "merge-k-sorted-lists"),
+    "swap nodes in pairs": (24, "swap-nodes-in-pairs"),
+    "reverse nodes in k-group": (25, "reverse-nodes-in-k-group"),
+    "remove duplicates from sorted array": (26, "remove-duplicates-from-sorted-array"),
+    "remove element": (27, "remove-element"),
+    "find the index of the first occurrence in a string": (28, "find-the-index-of-the-first-occurrence-in-a-string"),
+    "divide two integers": (29, "divide-two-integers"),
+    "substring with concatenation of all words": (30, "substring-with-concatenation-of-all-words"),
+    "next permutation": (31, "next-permutation"),
+    "longest valid parentheses": (32, "longest-valid-parentheses"),
+    "search in rotated sorted array": (33, "search-in-rotated-sorted-array"),
+    "find first and last position of element in sorted array": (34, "find-first-and-last-position-of-element-in-sorted-array"),
+    "search insert position": (35, "search-insert-position"),
+    "combination sum": (39, "combination-sum"),
+    "combination sum ii": (40, "combination-sum-ii"),
+    "permutations": (46, "permutations"),
+    "permutations ii": (47, "permutations-ii"),
+    "rotate image": (48, "rotate-image"),
+    "group anagrams": (49, "group-anagrams"),
+    "pow(x, n)": (50, "powx-n"),
+    "n-queens": (51, "n-queens"),
+    "n-queens ii": (52, "n-queens-ii"),
+    "maximum subarray": (53, "maximum-subarray"),
+    "spiral matrix": (54, "spiral-matrix"),
+    "jump game": (55, "jump-game"),
+    "jump game ii": (45, "jump-game-ii"),
+    "merge intervals": (56, "merge-intervals"),
+    "insert interval": (57, "insert-interval"),
+    "length of last word": (58, "length-of-last-word"),
+    "spiral matrix ii": (59, "spiral-matrix-ii"),
+    "unique paths": (62, "unique-paths"),
+    "unique paths ii": (63, "unique-paths-ii"),
+    "minimum path sum": (64, "minimum-path-sum"),
+    "valid number": (65, "valid-number"),
+    "plus one": (66, "plus-one"),
+    "add binary": (67, "add-binary"),
+    "text justification": (68, "text-justification"),
+    "sqrtx": (69, "sqrtx"),
+    "climbing stairs": (70, "climbing-stairs"),
+    "simplify path": (71, "simplify-path"),
+    "edit distance": (72, "edit-distance"),
+    "set matrix zeroes": (73, "set-matrix-zeroes"),
+    "search a 2d matrix": (74, "search-a-2d-matrix"),
+    "search a 2d matrix ii": (240, "search-a-2d-matrix-ii"),
+    "largest rectangle in histogram": (84, "largest-rectangle-in-histogram"),
+    "maximal rectangle": (85, "maximal-rectangle"),
+    "partition list": (86, "partition-list"),
+    "merge sorted array": (88, "merge-sorted-array"),
+    "gray code": (89, "gray-code"),
+    "restore ip addresses": (93, "restore-ip-addresses"),
+    "reverse linked list ii": (92, "reverse-linked-list-ii"),
+    "decode ways": (91, "decode-ways"),
+    "word break": (139, "word-break"),
+    "word break ii": (140, "word-break-ii"),
+    "lru cache": (146, "lru-cache"),
+    "evaluate reverse polish notation": (150, "evaluate-reverse-polish-notation"),
+    "reverse words in a string": (151, "reverse-words-in-a-string"),
+    "binary search tree iterator": (173, "binary-search-tree-iterator"),
+    "two sum iii - data structure design": (170, "two-sum-iii-data-structure-design"),
+    "find median from data stream": (295, "find-median-from-data-stream"),
+    "implement trie (prefix tree)": (208, "implement-trie-prefix-tree"),
+    "word search ii": (212, "word-search-ii"),
+    "number of islands": (200, "number-of-islands"),
+    "course schedule": (207, "course-schedule"),
+    "course schedule ii": (210, "course-schedule-ii"),
+    "minimum height trees": (310, "minimum-height-trees"),
+    "alien dictionary": (269, "alien-dictionary"),
+    "longest increasing subsequence": (300, "longest-increasing-subsequence"),
+    "coin change": (322, "coin-change"),
+    "word ladder": (127, "word-ladder"),
+    "word ladder ii": (126, "word-ladder-ii"),
+    "house robber": (198, "house-robber"),
+    "house robber ii": (213, "house-robber-ii"),
+    "house robber iii": (337, "house-robber-iii"),
+    "range sum query - immutable": (303, "range-sum-query-immutable"),
+    "range sum query 2d - immutable": (304, "range-sum-query-2d-immutable"),
+    "range sum query 2d - mutable": (308, "range-sum-query-2d-mutable"),
+    "the skyline problem": (218, "the-skyline-problem"),
+    "maximal square": (221, "maximal-square"),
+    "contains duplicate": (217, "contains-duplicate"),
+    "contains duplicate ii": (219, "contains-duplicate-ii"),
+    "contains duplicate iii": (220, "contains-duplicate-iii"),
+    "valid anagram": (242, "valid-anagram"),
+    "implement queue using stacks": (232, "implement-queue-using-stacks"),
+    "implement stack using queues": (225, "implement-stack-using-queues"),
+    "invert binary tree": (226, "invert-binary-tree"),
+    "kth smallest element in a bst": (230, "kth-smallest-element-in-a-bst"),
+    "lowest common ancestor of a binary search tree": (235, "lowest-common-ancestor-of-a-binary-search-tree"),
+    "lowest common ancestor of a binary tree": (236, "lowest-common-ancestor-of-a-binary-tree"),
+    "delete node in a linked list": (237, "delete-node-in-a-linked-list"),
+    "majority element": (169, "majority-element"),
+    "majority element ii": (229, "majority-element-ii"),
+    "the largest number": (179, "the-largest-number"),
+    "kth largest element in an array": (215, "kth-largest-element-in-an-array"),
+    "find the celebrity": (277, "find-the-celebrity"),
+    "happy number": (202, "happy-number"),
+    "isomorphic strings": (205, "isomorphic-strings"),
+    "word pattern": (290, "word-pattern"),
+    "shuffle an array": (384, "shuffle-an-array"),
+    "min stack": (155, "min-stack"),
+    "fizz buzz": (412, "fizz-buzz"),
+    "serialize and deserialize binary tree": (297, "serialize-and-deserialize-binary-tree"),
+    "binary tree right side view": (199, "binary-tree-right-side-view"),
+    "find peak element": (162, "find-peak-element"),
+    "symmetric tree": (101, "symmetric-tree"),
+    "task scheduler": (621, "task-scheduler"),
+}
+
 
 def now_utc() -> datetime.datetime:
     return datetime.datetime.now(datetime.UTC)
 
 
+def safe_zoneinfo(name: str) -> datetime.tzinfo:
+    try:
+        return ZoneInfo(name)
+    except ZoneInfoNotFoundError:
+        return datetime.UTC
+
+
+def resolve_timezone_name(config: Dict[str, Any] | None = None) -> str:
+    candidate = str((config or {}).get("timezone") or DEFAULT_TIMEZONE).strip()
+    try:
+        ZoneInfo(candidate)
+        return candidate
+    except ZoneInfoNotFoundError:
+        try:
+            ZoneInfo(DEFAULT_TIMEZONE)
+            return DEFAULT_TIMEZONE
+        except ZoneInfoNotFoundError:
+            return "UTC"
+
+
+def planner_timezone(config: Dict[str, Any] | None = None) -> datetime.tzinfo:
+    return safe_zoneinfo(resolve_timezone_name(config))
+
+
+def now_in_planner_timezone(config: Dict[str, Any] | None = None) -> datetime.datetime:
+    return now_utc().astimezone(planner_timezone(config))
+
+
 def iso_utc(dt: datetime.datetime) -> str:
-    return dt.isoformat().replace("+00:00", "Z")
+    return dt.astimezone(datetime.UTC).isoformat().replace("+00:00", "Z")
 
 
-def format_local_readable(dt_str: str) -> str:
+def format_local_readable(dt_str: str, timezone_name: str | None = None) -> str:
     if not dt_str:
         return "Unknown"
     try:
         dt = datetime.datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-        local_dt = dt.astimezone()
+        target_tz = safe_zoneinfo(timezone_name) if timezone_name else planner_timezone()
+        local_dt = dt.astimezone(target_tz)
         return local_dt.strftime("%b %d, %Y %I:%M:%S %p %Z")
     except Exception:
         return dt_str
+
+
+def emit_progress(step_index: int, step_total: int, label: str) -> None:
+    print(f"[PROGRESS {step_index}/{step_total}] {label}", flush=True)
 
 
 def load_json(path, default):
@@ -145,6 +315,13 @@ def clean_env_value(name: str) -> str:
     if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
         value = value[1:-1].strip()
     return value
+
+
+def env_flag(name: str, default: bool) -> bool:
+    value = clean_env_value(name)
+    if not value:
+        return default
+    return value.lower() in {"1", "true", "yes", "on"}
 
 
 def difficulty_score(difficulty: str) -> float:
@@ -886,6 +1063,7 @@ Your job is the smart part:
 - choose the final plan from the candidate pools
 - respect the target shape unless there is a truly strong reason not to
 - explain any deviation clearly
+- produce user-facing explanations, not planner-internal justifications
 
 PLANNING BIAS:
 Current mode is "{planning_bias}".
@@ -937,6 +1115,13 @@ IMPORTANT NOTES:
 - Treat old + low count as weak mastery.
 - Output ONLY valid JSON.
 
+USER EXPLANATION RULES:
+- why_now_summary must be short, concrete, and user-facing.
+- Explain the user's weaknesses and gaps, not planner mechanics.
+- Avoid phrases like "target shape", "stability beats swapping", "current pool", or "no reason to rotate".
+- problem_reasons must contain one short reason per chosen problem, in the same order as the TLDR.
+- Each problem reason should explain the actual leverage of that problem: stale recall risk, weak mastery, missing canonical pattern, or important interview coverage gap.
+
 Snapshot summary:
 {summary}
 
@@ -953,9 +1138,13 @@ Return JSON with exactly this shape:
 {{
   "run_id": "{run_id}",
   "generated_at": "{iso_utc(now_utc())}",
-  "date": "{datetime.date.today().isoformat()}",
+  "date": "{now_in_planner_timezone(config).date().isoformat()}",
   "tldr": "...",
-  "why_now": "...",
+  "why_now_summary": "...",
+  "problem_reasons": [
+    "...",
+    "..."
+  ],
   "primary_action": "...",
   "secondary_action": "...",
   "stretch_action": "...",
@@ -974,6 +1163,105 @@ Return JSON with exactly this shape:
   "confidence": "high|medium|low"
 }}
 '''
+
+
+def summarize_openai_error(status_code: int, data: Dict[str, Any]) -> str:
+    error = data.get("error") if isinstance(data, dict) else None
+    if isinstance(error, dict):
+        message = str(error.get("message") or "").strip()
+        error_type = str(error.get("type") or "").strip()
+        error_code = str(error.get("code") or "").strip()
+        message_lower = message.lower()
+        code_lower = error_code.lower()
+        type_lower = error_type.lower()
+
+        if (
+            "insufficient_quota" in code_lower
+            or "insufficient" in message_lower
+            or "quota" in message_lower
+            or "billing" in message_lower
+            or "insufficient_quota" in type_lower
+        ):
+            return (
+                "OpenAI request failed because the API account has no available balance or quota. "
+                "Add billing or credits to your OpenAI account and rerun the planner."
+            )
+
+        if resp_status_is_auth(status_code, error_code, error_type, message_lower):
+            return (
+                "OpenAI request failed because the API key was rejected. "
+                "Check OPENAI_API_KEY and confirm it is valid for the Responses API."
+            )
+
+        detail = message or f"type={error_type or 'unknown'}, code={error_code or 'unknown'}"
+        return f"OpenAI API error (status={status_code}): {detail}"
+
+    return f"OpenAI API error. status={status_code}, payload={data}"
+
+
+def resp_status_is_auth(status_code: int, error_code: str, error_type: str, message_lower: str) -> bool:
+    if status_code in (401, 403):
+        return True
+    return any(
+        token in (error_code or "").lower() or token in (error_type or "").lower() or token in message_lower
+        for token in ["invalid_api_key", "authentication", "auth", "unauthorized", "forbidden"]
+    )
+
+
+def enrich_plan_with_problem_metadata(plan_json: Dict[str, Any], snapshot: Dict[str, Any]) -> None:
+    """Add problem_metadata (frontend_id, slug) to plan_json based on TLDR titles"""
+    tldr = plan_json.get("tldr", "")
+    if not tldr:
+        return
+    
+    # Build a title->problem mapping from snapshot (case-insensitive)
+    snapshot_problems = snapshot.get("problems", [])
+    title_to_problem = {p.get("title", "").lower().strip(): p for p in snapshot_problems}
+    
+    # Extract problem titles from TLDR lines
+    problem_metadata = {}
+    for line in str(tldr).splitlines():
+        # Remove numbering: "1. Redo Title" -> "Redo Title"
+        line = line.strip()
+        line = re.sub(r"^\d+\.\s*", "", line)
+        
+        # Remove action prefix: "Redo Title" -> "Title" or "Learn Title" -> "Title"
+        title = re.sub(r"^(Redo|Learn)\s+", "", line, flags=re.IGNORECASE).strip().rstrip(".")
+        
+        if not title:
+            continue
+        
+        # Try exact match first (case-insensitive) from snapshot
+        title_lower = title.lower().strip()
+        problem = title_to_problem.get(title_lower)
+        
+        # If no exact match, try fuzzy matching in snapshot
+        if not problem:
+            for snapshot_title, snapshot_problem in title_to_problem.items():
+                if title_lower in snapshot_title or snapshot_title in title_lower:
+                    problem = snapshot_problem
+                    break
+        
+        # If still no match, try the internal PROBLEM_LOOKUP
+        if not problem:
+            lookup_data = PROBLEM_LOOKUP.get(title_lower)
+            if lookup_data:
+                frontend_id, slug = lookup_data
+                problem_metadata[title] = {
+                    "frontend_id": frontend_id,
+                    "slug": slug,
+                }
+                continue
+        
+        # If found in snapshot, use it
+        if problem:
+            problem_metadata[title] = {
+                "frontend_id": problem.get("frontend_id", ""),
+                "slug": problem.get("slug", ""),
+            }
+    
+    if problem_metadata:
+        plan_json["problem_metadata"] = problem_metadata
 
 
 def call_openai_for_plan(prompt: str) -> Dict[str, Any]:
@@ -1011,7 +1299,7 @@ def call_openai_for_plan(prompt: str) -> Dict[str, Any]:
         )
 
     if resp.status_code >= 400:
-        raise RuntimeError(f"OpenAI API error. status={resp.status_code}, payload={data}")
+        raise RuntimeError(summarize_openai_error(resp.status_code, data))
 
     text_parts: List[str] = []
     for item in data.get("output", []):
@@ -1038,7 +1326,8 @@ def call_openai_for_plan(prompt: str) -> Dict[str, Any]:
         "generated_at",
         "date",
         "tldr",
-        "why_now",
+        "why_now_summary",
+        "problem_reasons",
         "primary_action",
         "secondary_action",
         "stretch_action",
@@ -1064,6 +1353,12 @@ def call_openai_for_plan(prompt: str) -> Dict[str, Any]:
     if not isinstance(parsed.get("insights"), list):
         raise RuntimeError("OpenAI JSON field 'insights' must be a list.")
 
+    if not isinstance(parsed.get("problem_reasons"), list):
+        raise RuntimeError("OpenAI JSON field 'problem_reasons' must be a list.")
+
+    if not parsed.get("why_now"):
+        parsed["why_now"] = parsed.get("why_now_summary", "")
+
     return parsed
 
 
@@ -1072,7 +1367,7 @@ def make_readable_plan_text(plan_json: Dict[str, Any]) -> str:
     insights = plan_json.get("insights", [])
 
     generated_at_utc = plan_json.get("generated_at")
-    generated_at_local = format_local_readable(generated_at_utc)
+    generated_at_local = format_local_readable(generated_at_utc, plan_json.get("timezone"))
 
     return f'''🔥 Daily LeetCode Plan
 
@@ -1099,7 +1394,10 @@ Stretch:
 ━━━━━━━━━━━━━━━━━━━━
 
 Why:
-{plan_json.get("why_now")}
+{plan_json.get("why_now_summary") or plan_json.get("why_now")}
+
+Problem Reasons:
+{chr(10).join("- " + str(x) for x in plan_json.get("problem_reasons", [])) if plan_json.get("problem_reasons") else "- None"}
 
 ━━━━━━━━━━━━━━━━━━━━
 
@@ -1124,6 +1422,7 @@ Reasoning (Short):
 
 
 def main():
+    emit_progress(1, 6, "Validating environment and LeetCode authentication")
     verify_env_setup()
     verify_leetcode_auth()
 
@@ -1136,7 +1435,7 @@ def main():
         prev_snapshot_path = os.path.join(HISTORY_DIR, latest_run, "snapshot.json")
         prev_snapshot = load_json(prev_snapshot_path, {})
 
-    now = now_utc()
+    now = now_in_planner_timezone(config)
     run_id = now.strftime("%Y-%m-%d_%H-%M-%S")
     run_dir = os.path.join(HISTORY_DIR, run_id)
     os.makedirs(run_dir, exist_ok=True)
@@ -1148,6 +1447,7 @@ def main():
     plan_memory_path = os.path.join(run_dir, "plan_memory.json")
     candidate_buckets_path = os.path.join(run_dir, "candidate_buckets.json")
 
+    emit_progress(2, 6, "Fetching solved problems and building snapshot")
     snapshot = generate_real_snapshot(prev_snapshot=prev_snapshot)
     delta = diff(prev_snapshot, snapshot)
 
@@ -1156,6 +1456,7 @@ def main():
         print("Min frontend_id:", snapshot["problems"][0].get("frontend_id"))
         print("Max frontend_id:", snapshot["problems"][-1].get("frontend_id"))
 
+    emit_progress(3, 6, "Scoring review and gap-fill candidates")
     history_plans = get_recent_plan_memory()
     target_shape = get_target_shape(config)
     candidate_pools = build_candidate_pools(snapshot, history_plans, config)
@@ -1167,6 +1468,7 @@ def main():
         "candidate_pools": candidate_pools,
     })
 
+    emit_progress(4, 6, "Preparing GPT planning prompt")
     prompt = build_prompt(
         snapshot=snapshot,
         delta=delta,
@@ -1180,8 +1482,15 @@ def main():
     with open(prompt_path, "w", encoding="utf-8") as f:
         f.write(prompt)
 
+    emit_progress(5, 6, "Generating final recommendation with GPT")
     plan_json = call_openai_for_plan(prompt)
+    plan_json["timezone"] = resolve_timezone_name(config)
+    plan_json["date"] = now.date().isoformat()
+    
+    # Enrich plan with problem metadata (frontend_id, slug)
+    enrich_plan_with_problem_metadata(plan_json, snapshot)
 
+    emit_progress(6, 6, "Saving artifacts and final readable plan")
     save_json(recommendation_path, plan_json)
     save_json(plan_memory_path, plan_json)
 
@@ -1196,7 +1505,8 @@ def main():
     print("Focus mode:", plan_json.get("focus_mode"))
     print("Confidence:", plan_json.get("confidence"))
 
-    webbrowser.open(f"file://{os.path.abspath(readable_plan_path)}")
+    if env_flag("LEETLOOP_OPEN_BROWSER", True):
+        webbrowser.open(f"file://{os.path.abspath(readable_plan_path)}")
 
 
 if __name__ == "__main__":
@@ -1206,3 +1516,4 @@ if __name__ == "__main__":
         print()
         print("Pipeline failed.")
         print(str(e))
+        sys.exit(1)
