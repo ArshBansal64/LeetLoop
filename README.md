@@ -63,10 +63,11 @@ All developers are encouraged to iterate on this concept.
 
 ## Demo
 
-```md
+### Dashboard
 ![LeetLoop dashboard](docs/images/dashboard.png)
-![Each run's history is stored with date/time (includes prompt, raw response, python-computed problem buckets)](docs/images/history.png)
-```
+
+### Run History
+![Run history](docs/images/history.png)
 
 ### Early Usage Signals
 
