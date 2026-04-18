@@ -2,9 +2,11 @@
 
 # LeetLoop
 
-LeetLoop is a local-first interview prep planner built in Python that turns your real LeetCode history into a personalized daily practice plan.
+LeetLoop is a **local-first decision system for interview preparation**, designed to turn LeetCode practice into a structured, data-driven feedback loop.
 
-Instead of guessing what to solve next, LeetLoop pulls your accepted problems from LeetCode through GraphQL, tracks solve timestamps and repetition counts over time, analyzes likely weak spots, and uses the OpenAI Responses API to assemble a focused daily session around review, gap-filling, and interview readiness.
+Rather than manually tracking progress, LeetLoop ingests solved problems, analyzes patterns, and generates adaptive study plans while preserving full transparency through inspectable artifacts.
+
+Built as a **closed-loop system**, where each run updates a persistent dataset of solved problems, enabling adaptive scheduling and continuous improvement.  
 
 Has LeetLoop helped you land an offer? Spotted any issues? Connect with me at https://www.linkedin.com/in/arsh-bansal1/ and share your thoughts!
 
