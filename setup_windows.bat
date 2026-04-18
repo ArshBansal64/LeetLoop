@@ -16,7 +16,7 @@ REM Check if Python is installed
 where python >nul 2>nul
 if %errorlevel% neq 0 (
     echo ERROR: Python is not installed or not in PATH
-    echo Please download and install Python 3.8+ from https://www.python.org
+    echo Please download and install Python 3.10+ from https://www.python.org
     echo Make sure to check "Add Python to PATH" during installation
     pause
     exit /b 1
@@ -26,6 +26,13 @@ REM Get Python version
 for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
 echo Detected Python %PYTHON_VERSION%
 echo.
+
+python -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)"
+if errorlevel 1 (
+    echo ERROR: LeetLoop requires Python 3.10 or newer.
+    pause
+    exit /b 1
+)
 
 REM Create virtual environment if it doesn't exist
 if not exist ".venv" (

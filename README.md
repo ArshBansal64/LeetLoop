@@ -11,6 +11,23 @@ The system uses a hybrid approach:
 
 ---
 
+## Requirements
+
+- Python 3.10+
+- OpenAI API key
+- LeetCode session cookies:
+  - `LEETCODE_SESSION`
+  - `LEETCODE_CSRFTOKEN`
+
+## Notes
+
+- Local-first app
+- Browser-based UI
+- Source install is currently the recommended path
+- macOS/Linux setup is terminal-based
+
+---
+
 ## What it does
 
 - Fetches solved problem history from LeetCode
@@ -126,38 +143,44 @@ LeetLoop/
 
 ## Setup
 
-### Recommended: Run from Source
+### Recommended: Run From Source
+
+Source install is the primary supported path right now.
 
 #### Windows
 
 1. Clone the repository.
-2. Run:
+2. Run `setup_windows.bat`:
 
 ```bat
 setup_windows.bat
 ```
 
 This will:
+- require Python 3.10+
 - create a local virtual environment
 - install Python dependencies
 - create `.env` from `.env.example`
-- prompt for your OpenAI API key
-- preserve the remaining required fields in `.env`
+- prompt for `OPENAI_API_KEY`
+- prompt for `LEETCODE_SESSION`
+- prompt for `LEETCODE_CSRFTOKEN`
 
-3. Open `.env` and fill in any remaining placeholder values:
-- `LEETCODE_SESSION`
-- `LEETCODE_CSRFTOKEN`
-
-4. Start the app:
+3. Start the app:
 
 ```bat
 run_app.bat
 ```
 
+Optional quick validation before launch:
+
+```bat
+.venv\Scripts\python.exe src\run_service.py --check-setup
+```
+
 #### macOS / Linux
 
 1. Clone the repository.
-2. Run:
+2. Open a terminal in the repo and run:
 
 ```bash
 chmod +x setup.sh
@@ -165,22 +188,30 @@ chmod +x setup.sh
 ```
 
 This will:
+- require Python 3.10+
 - create a local virtual environment
 - install Python dependencies
 - create `.env` from `.env.example`
-- prompt for your OpenAI API key
-- preserve the remaining required fields in `.env`
+- prompt for `OPENAI_API_KEY`
+- prompt for `LEETCODE_SESSION`
+- prompt for `LEETCODE_CSRFTOKEN`
 
-3. Open `.env` and fill in any remaining placeholder values:
-- `LEETCODE_SESSION`
-- `LEETCODE_CSRFTOKEN`
-
-4. Start the app:
+3. Start the app:
 
 ```bash
 chmod +x run_app.sh
 ./run_app.sh
 ```
+
+Optional quick validation before launch:
+
+```bash
+.venv/bin/python src/run_service.py --check-setup
+```
+
+### Optional Packaged Launcher
+
+The packaged launcher exists as a secondary path, but source install is still the documented default until the packaged flow is fully proven across platforms.
 
 ### Manual Setup (Advanced)
 
@@ -202,6 +233,12 @@ pip install -r requirements.txt
 
 ```bash
 python src/run_service.py --ui
+```
+
+Optional quick validation:
+
+```bash
+python src/run_service.py --check-setup
 ```
 
 Or run the planner directly once:
@@ -266,6 +303,34 @@ On macOS / Linux:
 ```
 
 This starts the local web app and embedded scheduler.
+
+### First-run commands
+
+- Windows: `setup_windows.bat` then `run_app.bat`
+- macOS/Linux: `./setup.sh` then `./run_app.sh`
+
+### Quick setup check
+
+Run this before launching the app if you want a fast validation pass:
+
+On Windows:
+
+```bat
+.venv\Scripts\python.exe src\run_service.py --check-setup
+```
+
+On macOS / Linux:
+
+```bash
+.venv/bin/python src/run_service.py --check-setup
+```
+
+It checks:
+
+- Python version
+- `.env` presence
+- required credentials
+- config JSON loading
 
 ### Direct Python entrypoints
 

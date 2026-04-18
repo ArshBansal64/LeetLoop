@@ -8,8 +8,16 @@ import webbrowser
 import requests
 import time
 import sys
+from pathlib import Path
 from typing import Any, Dict, List, Tuple
+
+if sys.version_info < (3, 10):
+    print("LeetLoop requires Python 3.10 or newer.")
+    raise SystemExit(1)
+
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+from startup_checks import missing_credentials_message, missing_env_file_message
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
@@ -36,7 +44,55 @@ DEFAULT_GAP_FILL_CANDIDATES = [
     {"title": "Task Scheduler", "slug": "task-scheduler", "difficulty": "Medium", "reason": "common counting/greedy scheduling pattern"},
     {"title": "Kth Largest Element in an Array", "slug": "kth-largest-element-in-an-array", "difficulty": "Medium", "reason": "common heap/select pattern"},
     {"title": "Word Ladder", "slug": "word-ladder", "difficulty": "Hard", "reason": "classic BFS shortest-path pattern"},
+    {"title": "Binary Tree Maximum Path Sum", "slug": "binary-tree-maximum-path-sum", "difficulty": "Hard", "reason": "high-value tree DP interview anchor"},
+    {"title": "Find Median from Data Stream", "slug": "find-median-from-data-stream", "difficulty": "Hard", "reason": "canonical two-heaps design problem"},
+    {"title": "Longest Increasing Subsequence", "slug": "longest-increasing-subsequence", "difficulty": "Medium", "reason": "core DP and binary-search pattern"},
+    {"title": "Number of Islands", "slug": "number-of-islands", "difficulty": "Medium", "reason": "canonical graph traversal interview anchor"},
+    {"title": "Course Schedule", "slug": "course-schedule", "difficulty": "Medium", "reason": "core graph cycle-detection interview anchor"},
+    {"title": "Top K Frequent Elements", "slug": "top-k-frequent-elements", "difficulty": "Medium", "reason": "common bucket/heap frequency pattern"},
+    {"title": "Product of Array Except Self", "slug": "product-of-array-except-self", "difficulty": "Medium", "reason": "canonical prefix/suffix array pattern"},
+    {"title": "Longest Consecutive Sequence", "slug": "longest-consecutive-sequence", "difficulty": "Medium", "reason": "high-value hash-set interview anchor"},
+    {"title": "Group Anagrams", "slug": "group-anagrams", "difficulty": "Medium", "reason": "canonical hashing and grouping pattern"},
+    {"title": "Find Minimum in Rotated Sorted Array", "slug": "find-minimum-in-rotated-sorted-array", "difficulty": "Medium", "reason": "core rotated-array binary-search anchor"},
+    {"title": "Merge Intervals", "slug": "merge-intervals", "difficulty": "Medium", "reason": "classic interval consolidation pattern"},
+    {"title": "Coin Change", "slug": "coin-change", "difficulty": "Medium", "reason": "major bottom-up DP interview anchor"},
+    {"title": "Validate Binary Search Tree", "slug": "validate-binary-search-tree", "difficulty": "Medium", "reason": "high-frequency tree invariant question"},
+    {"title": "Sliding Window Maximum", "slug": "sliding-window-maximum", "difficulty": "Hard", "reason": "important deque/sliding-window flagship"},
+    {"title": "Trapping Rain Water", "slug": "trapping-rain-water", "difficulty": "Hard", "reason": "elite two-pointer / stack interview anchor"},
 ]
+
+INTERVIEW_CORE_PRIORITY_BONUS = {
+    "minimum-window-substring": 5.5,
+    "daily-temperatures": 5.0,
+    "serialize-and-deserialize-binary-tree": 4.6,
+    "largest-rectangle-in-histogram": 4.6,
+    "edit-distance": 4.2,
+    "task-scheduler": 4.0,
+    "kth-largest-element-in-an-array": 4.0,
+    "word-ladder": 4.2,
+    "binary-tree-maximum-path-sum": 4.1,
+    "find-median-from-data-stream": 4.0,
+    "longest-increasing-subsequence": 4.7,
+    "number-of-islands": 4.8,
+    "course-schedule": 4.8,
+    "top-k-frequent-elements": 4.0,
+    "product-of-array-except-self": 4.0,
+    "longest-consecutive-sequence": 4.8,
+    "group-anagrams": 4.2,
+    "search-in-rotated-sorted-array": 4.2,
+    "find-minimum-in-rotated-sorted-array": 4.3,
+    "merge-intervals": 4.2,
+    "coin-change": 4.9,
+    "binary-tree-level-order-traversal": 3.8,
+    "validate-binary-search-tree": 4.3,
+    "lowest-common-ancestor-of-a-binary-tree": 4.0,
+    "rotting-oranges": 3.8,
+    "subarray-sum-equals-k": 4.0,
+    "sliding-window-maximum": 4.1,
+    "find-all-anagrams-in-a-string": 3.8,
+    "trapping-rain-water": 4.0,
+    "best-time-to-buy-and-sell-stock": 3.5,
+}
 
 CANONICAL_REVIEW_BONUS = {
     "lru-cache": 5.0,
@@ -329,9 +385,9 @@ def difficulty_score(difficulty: str) -> float:
 
 
 def get_gap_fill_candidates_from_config(config: Dict[str, Any]) -> List[Dict[str, Any]]:
+    normalized_by_slug = {item["slug"]: dict(item) for item in DEFAULT_GAP_FILL_CANDIDATES}
     configured = config.get("canonical_gap_candidates")
     if isinstance(configured, list) and configured:
-        normalized = []
         for item in configured:
             if not isinstance(item, dict):
                 continue
@@ -339,15 +395,13 @@ def get_gap_fill_candidates_from_config(config: Dict[str, Any]) -> List[Dict[str
             slug = str(item.get("slug", "")).strip()
             if not title or not slug:
                 continue
-            normalized.append({
+            normalized_by_slug[slug] = {
                 "title": title,
                 "slug": slug,
                 "difficulty": str(item.get("difficulty", "Medium")).strip() or "Medium",
                 "reason": str(item.get("reason", "canonical interview anchor")).strip() or "canonical interview anchor",
-            })
-        if normalized:
-            return normalized
-    return DEFAULT_GAP_FILL_CANDIDATES
+            }
+    return list(normalized_by_slug.values())
 
 
 def get_review_priority_bonus(config: Dict[str, Any]) -> Dict[str, float]:
@@ -373,6 +427,42 @@ def get_review_deprioritized_slugs(config: Dict[str, Any]) -> set[str]:
         if slug:
             slugs.add(slug)
     return slugs
+
+
+def get_interview_core_priority_bonus(config: Dict[str, Any]) -> Dict[str, float]:
+    configured = config.get("interview_core_priority_bonus")
+    bonuses: Dict[str, float] = dict(INTERVIEW_CORE_PRIORITY_BONUS)
+    if not isinstance(configured, dict):
+        return bonuses
+    for slug, value in configured.items():
+        try:
+            bonuses[str(slug).strip()] = float(value)
+        except Exception:
+            continue
+    return bonuses
+
+
+def solved_count_profile(solved_count: int) -> Dict[str, float]:
+    if solved_count < 80:
+        return {
+            "review_core_multiplier": 1.15,
+            "medium_gap_bonus": 1.1,
+            "hard_gap_penalty": 0.9,
+            "hard_anchor_threshold": 5.0,
+        }
+    if solved_count < 180:
+        return {
+            "review_core_multiplier": 1.08,
+            "medium_gap_bonus": 0.55,
+            "hard_gap_penalty": 0.35,
+            "hard_anchor_threshold": 5.2,
+        }
+    return {
+        "review_core_multiplier": 1.0,
+        "medium_gap_bonus": 0.0,
+        "hard_gap_penalty": 0.0,
+        "hard_anchor_threshold": 5.4,
+    }
 
 
 def is_low_transfer_easy(slug: str, difficulty: str, canonical_bonus: float) -> bool:
@@ -555,6 +645,13 @@ def post_graphql(query, variables=None, timeout=30, max_retries=3):
 
 
 def verify_env_setup():
+    if not os.path.exists(ENV_PATH):
+        raise RuntimeError(missing_env_file_message(Path(ENV_PATH)))
+
+    missing = [name for name in ("OPENAI_API_KEY", "LEETCODE_SESSION", "LEETCODE_CSRFTOKEN") if not clean_env_value(name)]
+    if missing:
+        raise RuntimeError(missing_credentials_message(missing, Path(ENV_PATH)))
+
     print(f".env file exists: {os.path.exists(ENV_PATH)}")
     print(f"OPENAI_API_KEY present: {bool(clean_env_value('OPENAI_API_KEY'))}")
     print(f"LEETCODE_SESSION present: {bool(clean_env_value('LEETCODE_SESSION'))}")
@@ -902,6 +999,8 @@ def build_candidate_pools(snapshot: Dict[str, Any], history: List[Dict[str, Any]
     ref_now = parse_snapshot_now(snapshot)
     review_priority_bonus = get_review_priority_bonus(config)
     review_deprioritized_slugs = get_review_deprioritized_slugs(config)
+    interview_core_bonus = get_interview_core_priority_bonus(config)
+    profile = solved_count_profile(len(problems))
 
     review_candidates = []
     fragile_candidates = []
@@ -928,12 +1027,14 @@ def build_candidate_pools(snapshot: Dict[str, Any], history: List[Dict[str, Any]
             continue
 
         canonical_bonus = CANONICAL_REVIEW_BONUS.get(slug, 0.0)
-        priority_bonus = review_priority_bonus.get(slug, canonical_bonus)
+        interview_bonus = interview_core_bonus.get(slug, 0.0)
+        priority_bonus = max(review_priority_bonus.get(slug, canonical_bonus), interview_bonus)
         deprioritized_penalty = 4.5 if slug in review_deprioritized_slugs else 0.0
         generic_easy_penalty = 4.0 if is_generic_easy_review(difficulty, priority_bonus) else 0.0
         low_transfer_easy_penalty = 2.5 if is_low_transfer_easy(slug, difficulty, canonical_bonus) else 0.0
         obscure_penalty = 2.0 if is_obscure_or_contesty(slug, title, canonical_bonus) else 0.0
         recent_plan_penalty = 1.0 if recently_mentioned(title, history) else 0.0
+        stage_review_bonus = interview_bonus * profile["review_core_multiplier"] if count <= 2 else interview_bonus * 0.5
         age_component = min(age_hours / 24.0, 365.0) * 0.03
         low_count_component = max(0, 3 - min(count, 3)) * 2.0
         difficulty_component = difficulty_score(difficulty) * 1.2
@@ -941,7 +1042,8 @@ def build_candidate_pools(snapshot: Dict[str, Any], history: List[Dict[str, Any]
             age_component +
             low_count_component +
             difficulty_component +
-            priority_bonus -
+            priority_bonus +
+            stage_review_bonus -
             deprioritized_penalty -
             generic_easy_penalty -
             low_transfer_easy_penalty -
@@ -963,6 +1065,8 @@ def build_candidate_pools(snapshot: Dict[str, Any], history: List[Dict[str, Any]
                 "low_count": round(low_count_component, 2),
                 "difficulty": round(difficulty_component, 2),
                 "priority_bonus": priority_bonus,
+                "interview_core_bonus": interview_bonus,
+                "stage_review_bonus": round(stage_review_bonus, 2),
                 "canonical_bonus": canonical_bonus,
                 "deprioritized_penalty": deprioritized_penalty,
                 "generic_easy_penalty": generic_easy_penalty,
@@ -1000,7 +1104,20 @@ def build_candidate_pools(snapshot: Dict[str, Any], history: List[Dict[str, Any]
             continue
 
         recent_penalty = 1.5 if recently_mentioned(item["title"], history) else 0.0
-        score = difficulty_score(item["difficulty"]) * 2.0 - recent_penalty
+        interview_bonus = interview_core_bonus.get(item["slug"], 0.0)
+        medium_stage_bonus = profile["medium_gap_bonus"] if item["difficulty"] == "Medium" else 0.0
+        hard_stage_penalty = 0.0
+        if item["difficulty"] == "Hard" and profile["hard_gap_penalty"] > 0:
+            hard_stage_penalty = profile["hard_gap_penalty"]
+            if interview_bonus >= profile["hard_anchor_threshold"]:
+                hard_stage_penalty *= 0.35
+        score = (
+            difficulty_score(item["difficulty"]) * 1.5 +
+            interview_bonus * 1.4 +
+            medium_stage_bonus -
+            hard_stage_penalty -
+            recent_penalty
+        )
 
         gap_fill_candidates.append({
             "title": item["title"],
@@ -1008,7 +1125,10 @@ def build_candidate_pools(snapshot: Dict[str, Any], history: List[Dict[str, Any]
             "difficulty": item["difficulty"],
             "score": round(score, 2),
             "score_components": {
-                "difficulty": round(difficulty_score(item["difficulty"]) * 2.0, 2),
+                "difficulty": round(difficulty_score(item["difficulty"]) * 1.5, 2),
+                "interview_core_bonus": round(interview_bonus * 1.4, 2),
+                "medium_stage_bonus": round(medium_stage_bonus, 2),
+                "hard_stage_penalty": round(hard_stage_penalty, 2),
                 "recent_plan_penalty": recent_penalty,
             },
             "why": item["reason"],
@@ -1018,9 +1138,9 @@ def build_candidate_pools(snapshot: Dict[str, Any], history: List[Dict[str, Any]
     gap_fill_candidates.sort(key=lambda x: (-x["score"], x["title"]))
 
     return {
-        "review_candidates": review_candidates[:8],
-        "gap_fill_candidates": gap_fill_candidates[:10],
-        "fragile_candidates": fragile_candidates[:5],
+        "review_candidates": review_candidates[:12],
+        "gap_fill_candidates": gap_fill_candidates[:16],
+        "fragile_candidates": fragile_candidates[:6],
         "cooldown_excluded": cooldown_excluded[:12],
     }
 
@@ -1104,6 +1224,14 @@ TLDR RULE:
 - It must list exact problems to do in order.
 - Keep it concise.
 - TLDR order must match Primary → Secondary → Stretch.
+- TLDR must be a newline-separated string with exactly one problem per line.
+- Each TLDR line must be numbered in order like:
+  1. Find Minimum in Rotated Sorted Array
+  2. 3Sum
+  3. Daily Temperatures
+  4. Minimum Window Substring
+- Do NOT write a prose sentence like "Do these 4 in order: A, B, C, D."
+- Do NOT put multiple problems on one line.
 
 NO ACTIVITY RULE:
 If there is no new activity, keep the core recommendations stable.
@@ -1139,7 +1267,7 @@ Return JSON with exactly this shape:
   "run_id": "{run_id}",
   "generated_at": "{iso_utc(now_utc())}",
   "date": "{now_in_planner_timezone(config).date().isoformat()}",
-  "tldr": "...",
+  "tldr": "1. Find Minimum in Rotated Sorted Array\n2. 3Sum\n3. Daily Temperatures\n4. Minimum Window Substring",
   "why_now_summary": "...",
   "problem_reasons": [
     "...",
@@ -1213,35 +1341,61 @@ def enrich_plan_with_problem_metadata(plan_json: Dict[str, Any], snapshot: Dict[
     tldr = plan_json.get("tldr", "")
     if not tldr:
         return
-    
+
+    def extract_titles() -> List[str]:
+        titles: List[str] = []
+        for raw_line in str(tldr).splitlines():
+            line = raw_line.strip()
+            line = re.sub(r"^\d+\.\s*", "", line)
+            title = re.sub(r"^(Redo|Learn)\s+", "", line, flags=re.IGNORECASE).strip().rstrip(".")
+            if title:
+                titles.append(title)
+
+        if len(titles) == 1:
+            single = titles[0]
+            intro_match = re.match(r"^(?:do|solve|work on)\b.+?:\s*(.+)$", single, flags=re.IGNORECASE)
+            if intro_match:
+                parts = [part.strip().rstrip(".") for part in intro_match.group(1).split(",") if part.strip()]
+                if len(parts) >= 2:
+                    titles = parts
+
+        if len(titles) <= 1:
+            reason_titles: List[str] = []
+            for reason in plan_json.get("problem_reasons", []):
+                match = re.match(r"^\s*(.+?)\s*:", str(reason).strip())
+                if match:
+                    title = match.group(1).strip().rstrip(".")
+                    if title:
+                        reason_titles.append(title)
+            if len(reason_titles) >= 2:
+                titles = reason_titles
+
+        deduped: List[str] = []
+        seen = set()
+        for title in titles:
+            if title.lower() in seen:
+                continue
+            seen.add(title.lower())
+            deduped.append(title)
+        return deduped
+
     # Build a title->problem mapping from snapshot (case-insensitive)
     snapshot_problems = snapshot.get("problems", [])
     title_to_problem = {p.get("title", "").lower().strip(): p for p in snapshot_problems}
-    
-    # Extract problem titles from TLDR lines
+
     problem_metadata = {}
-    for line in str(tldr).splitlines():
-        # Remove numbering: "1. Redo Title" -> "Redo Title"
-        line = line.strip()
-        line = re.sub(r"^\d+\.\s*", "", line)
-        
-        # Remove action prefix: "Redo Title" -> "Title" or "Learn Title" -> "Title"
-        title = re.sub(r"^(Redo|Learn)\s+", "", line, flags=re.IGNORECASE).strip().rstrip(".")
-        
-        if not title:
-            continue
-        
+    for title in extract_titles():
         # Try exact match first (case-insensitive) from snapshot
         title_lower = title.lower().strip()
         problem = title_to_problem.get(title_lower)
-        
+
         # If no exact match, try fuzzy matching in snapshot
         if not problem:
             for snapshot_title, snapshot_problem in title_to_problem.items():
                 if title_lower in snapshot_title or snapshot_title in title_lower:
                     problem = snapshot_problem
                     break
-        
+
         # If still no match, try the internal PROBLEM_LOOKUP
         if not problem:
             lookup_data = PROBLEM_LOOKUP.get(title_lower)
@@ -1252,7 +1406,7 @@ def enrich_plan_with_problem_metadata(plan_json: Dict[str, Any], snapshot: Dict[
                     "slug": slug,
                 }
                 continue
-        
+
         # If found in snapshot, use it
         if problem:
             problem_metadata[title] = {
@@ -1262,6 +1416,40 @@ def enrich_plan_with_problem_metadata(plan_json: Dict[str, Any], snapshot: Dict[
     
     if problem_metadata:
         plan_json["problem_metadata"] = problem_metadata
+
+
+def validate_tldr_format(tldr: Any, problem_reasons: Any) -> None:
+    value = str(tldr or "").strip()
+    if not value:
+        raise RuntimeError("OpenAI JSON field 'tldr' must not be empty.")
+
+    lines = [line.strip() for line in value.splitlines() if line.strip()]
+    if not lines:
+        raise RuntimeError("OpenAI JSON field 'tldr' must contain at least one task line.")
+
+    if len(lines) == 1 and re.search(r"\b(do|solve|work on)\b.+?:", lines[0], flags=re.IGNORECASE):
+        raise RuntimeError(
+            "OpenAI JSON field 'tldr' used prose summary format. "
+            "It must be newline-separated with one numbered problem per line."
+        )
+
+    for idx, line in enumerate(lines, start=1):
+        if not re.match(rf"^{idx}\.\s+\S", line):
+            raise RuntimeError(
+                "OpenAI JSON field 'tldr' must use numbered lines in order, "
+                "for example '1. Find Minimum in Rotated Sorted Array'."
+            )
+        content = re.sub(r"^\d+\.\s*", "", line).strip()
+        if len(lines) > 1 and "," in content:
+            raise RuntimeError(
+                "OpenAI JSON field 'tldr' must contain one problem per line, "
+                "not comma-separated multiple problems on the same line."
+            )
+
+    if isinstance(problem_reasons, list) and problem_reasons and len(problem_reasons) != len(lines):
+        raise RuntimeError(
+            "OpenAI JSON field 'problem_reasons' must have the same number of items as TLDR lines."
+        )
 
 
 def call_openai_for_plan(prompt: str) -> Dict[str, Any]:
@@ -1355,6 +1543,8 @@ def call_openai_for_plan(prompt: str) -> Dict[str, Any]:
 
     if not isinstance(parsed.get("problem_reasons"), list):
         raise RuntimeError("OpenAI JSON field 'problem_reasons' must be a list.")
+
+    validate_tldr_format(parsed.get("tldr"), parsed.get("problem_reasons"))
 
     if not parsed.get("why_now"):
         parsed["why_now"] = parsed.get("why_now_summary", "")

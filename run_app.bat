@@ -10,7 +10,7 @@ cd /d "%~dp0"
 
 if not exist .venv\Scripts\python.exe (
 
-  echo Missing virtual environment. Run setup.bat first.
+  echo Missing virtual environment. Run setup_windows.bat first.
 
   exit /b 1
 
@@ -20,7 +20,7 @@ if not exist .venv\Scripts\python.exe (
 
 if not exist .env (
 
-  echo Missing .env. Run setup.bat and fill in your credentials first.
+  echo Missing .env. Run setup_windows.bat first.
 
   exit /b 1
 

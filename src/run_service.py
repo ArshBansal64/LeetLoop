@@ -18,15 +18,31 @@ from urllib.parse import parse_qs, urlparse
 from urllib.request import urlopen
 from urllib.error import URLError
 import signal
+
+if sys.version_info < (3, 10):
+    print("LeetLoop requires Python 3.10 or newer.")
+    raise SystemExit(1)
+
+from dotenv import load_dotenv
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+from startup_checks import (
+    enforce_supported_python,
+    missing_credentials_message,
+    missing_env_file_message,
+    missing_required_env_vars,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
+ENV_PATH = PROJECT_ROOT / ".env"
 HISTORY_DIR = PROJECT_ROOT / "history"
 CONFIG_DIR = PROJECT_ROOT / "config"
 APP_CONFIG_PATH = CONFIG_DIR / "app_config.json"
 PLANNER_CONFIG_PATH = CONFIG_DIR / "config.json"
 AGENT_PID_PATH = CONFIG_DIR / "agent.pid"
+
+load_dotenv(dotenv_path=ENV_PATH)
 
 DEFAULT_APP_CONFIG = {
     "host": "127.0.0.1",
@@ -167,6 +183,44 @@ def load_planner_config():
 
 def save_planner_config(config):
     save_json(PLANNER_CONFIG_PATH, config)
+
+
+def validate_startup_environment() -> None:
+    enforce_supported_python()
+    if not ENV_PATH.exists():
+        raise RuntimeError(missing_env_file_message(ENV_PATH))
+
+    missing = missing_required_env_vars()
+    if missing:
+        raise RuntimeError(missing_credentials_message(missing, ENV_PATH))
+
+
+def run_setup_check() -> int:
+    enforce_supported_python()
+    print(f"Python version: {sys.version.split()[0]}")
+    print(f".env file exists: {ENV_PATH.exists()}")
+
+    missing = missing_required_env_vars()
+    for key in ("OPENAI_API_KEY", "LEETCODE_SESSION", "LEETCODE_CSRFTOKEN"):
+        print(f"{key} present: {key not in missing}")
+
+    for path in (PLANNER_CONFIG_PATH, APP_CONFIG_PATH):
+        try:
+            json.loads(path.read_text(encoding="utf-8"))
+            print(f"Config load OK: {path.relative_to(PROJECT_ROOT)}")
+        except Exception as exc:
+            print(f"Config load failed: {path.relative_to(PROJECT_ROOT)} ({exc})")
+            return 1
+
+    if not ENV_PATH.exists():
+        print(missing_env_file_message(ENV_PATH))
+        return 1
+    if missing:
+        print(missing_credentials_message(missing, ENV_PATH))
+        return 1
+
+    print("LeetLoop setup looks valid.")
+    return 0
 
 
 def current_planning_bias() -> str:
@@ -461,14 +515,16 @@ def title_to_slug(title: str) -> str:
     return slug
 
 
-def format_plan_html(tldr: str, problem_metadata: dict | None = None) -> str:
-    lines = [line.strip() for line in str(tldr or "").splitlines() if line.strip()]
-    if not lines:
-        return '<div class="plan-empty">No recommendation yet.</div>'
-
+def parse_plan_items(
+    tldr: str | None,
+    problem_metadata: dict | None = None,
+    problem_reasons: list[str] | None = None,
+) -> list[dict[str, str]]:
     problem_metadata = problem_metadata or {}
-    items = []
-    for raw_line in lines:
+    raw_lines = [line.strip() for line in str(tldr or "").splitlines() if line.strip()]
+    items: list[dict[str, str]] = []
+
+    for raw_line in raw_lines:
         line = re.sub(r"^\d+\.\s*", "", raw_line).strip()
         css = "task-generic"
         badge = "Task"
@@ -484,6 +540,72 @@ def format_plan_html(tldr: str, problem_metadata: dict | None = None) -> str:
             task_text = line[len("Learn "):].strip()
 
         task_text = task_text.rstrip(".")
+        if task_text:
+            items.append({
+                "css": css,
+                "badge": badge,
+                "name": task_text,
+            })
+
+    # Handle single-sentence TLDRs like:
+    # "Do these 4 in order: A, B, C, D."
+    if len(items) == 1:
+        single_name = items[0]["name"]
+        intro_match = re.match(r"^(?:do|solve|work on)\b.+?:\s*(.+)$", single_name, flags=re.IGNORECASE)
+        if intro_match:
+            split_parts = [part.strip().rstrip(".") for part in intro_match.group(1).split(",") if part.strip()]
+            matched_parts = [part for part in split_parts if part in problem_metadata]
+            if problem_reasons:
+                reason_titles = []
+                for reason in problem_reasons:
+                    match = re.match(r"^\s*(.+?)\s*:", str(reason).strip())
+                    if match:
+                        reason_titles.append(match.group(1).strip())
+                if reason_titles:
+                    split_parts = reason_titles
+                    matched_parts = reason_titles
+            if len(matched_parts) >= 2:
+                items = [{
+                    "css": "task-generic",
+                    "badge": "Task",
+                    "name": part,
+                } for part in split_parts]
+
+    # Final fallback: derive ordered tasks from problem reasons when TLDR is not structured enough.
+    if len(items) <= 1 and problem_reasons:
+        derived_items = []
+        for reason in problem_reasons:
+            match = re.match(r"^\s*(.+?)\s*:", str(reason).strip())
+            if not match:
+                continue
+            title = match.group(1).strip().rstrip(".")
+            if title:
+                derived_items.append({
+                    "css": "task-generic",
+                    "badge": "Task",
+                    "name": title,
+                })
+        if len(derived_items) >= 2:
+            items = derived_items
+
+    return items
+
+
+def format_plan_html(
+    tldr: str,
+    problem_metadata: dict | None = None,
+    problem_reasons: list[str] | None = None,
+) -> str:
+    items_data = parse_plan_items(tldr, problem_metadata, problem_reasons)
+    if not items_data:
+        return '<div class="plan-empty">No recommendation yet.</div>'
+
+    problem_metadata = problem_metadata or {}
+    items = []
+    for item in items_data:
+        css = item["css"]
+        badge = item["badge"]
+        task_text = item["name"]
 
         problem_content = html.escape(task_text)
         problem_data = problem_metadata.get(task_text)
@@ -524,33 +646,16 @@ def format_problem_reasons_html(reasons, tldr: str | None = None, problem_metada
     reasons = [str(x).strip() for x in (reasons or []) if str(x).strip()]
     if not reasons:
         return '<div class="problem-reasons-empty">No problem-specific explanation yet.</div>'
-    
-    # If TLDR is available, parse it to extract problem names and types
-    problems_info = []
-    if tldr:
-        lines = [line.strip() for line in str(tldr or "").splitlines() if line.strip()]
-        for raw_line in lines:
-            line = re.sub(r"^\d+\.\s*", "", raw_line).strip()
-            problem_type = "task"
-            badge_text = "Task"
-            task_text = line
-            
-            if line.startswith("Redo "):
-                problem_type = "review"
-                badge_text = "Review"
-                task_text = line[len("Redo "):].strip()
-            elif line.startswith("Learn "):
-                problem_type = "learn"
-                badge_text = "Learn"
-                task_text = line[len("Learn "):].strip()
-            
-            task_text = task_text.rstrip(".")
-            problems_info.append({
-                "type": problem_type,
-                "badge": badge_text,
-                "name": task_text,
-            })
-    
+
+    problems_info = [
+        {
+            "type": item["badge"].lower(),
+            "badge": item["badge"],
+            "name": item["name"],
+        }
+        for item in parse_plan_items(tldr, problem_metadata, reasons)
+    ]
+
     # Build items with just problem index + badge + explanation (no name redundancy)
     items = []
     problem_metadata = problem_metadata or {}
@@ -896,7 +1001,7 @@ def build_page(selected_run_name: str | None = None):
     newer_run_name = run_names[selected_index + 1] if selected_index != -1 and selected_index < len(run_names) - 1 else None
     older_run_name = run_names[selected_index - 1] if selected_index > 0 else None
 
-    plan_html = format_plan_html(tldr, problem_metadata)
+    plan_html = format_plan_html(tldr, problem_metadata, problem_reasons)
     why_html = format_why_now_html(why_now)
     problem_reasons_html = format_problem_reasons_html(problem_reasons, tldr, problem_metadata)
     timezone_name = current_timezone_name()
@@ -1544,9 +1649,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--background", action="store_true")
     parser.add_argument("--ui", action="store_true")
+    parser.add_argument("--check-setup", action="store_true")
     parser.add_argument("--install-launch-at-login", action="store_true")
     parser.add_argument("--uninstall-launch-at-login", action="store_true")
     args = parser.parse_args()
+
+    if args.check_setup:
+        raise SystemExit(run_setup_check())
 
     if args.install_launch_at_login:
         print(install_autostart())
@@ -1558,6 +1667,7 @@ def main():
     cfg = load_app_config()
 
     if args.ui:
+        validate_startup_environment()
         if not server_is_running(cfg):
             if port_is_open(cfg):
                 stop_recorded_agent()
@@ -1581,6 +1691,8 @@ def main():
         if not args.background and cfg.get("open_browser_on_start", True):
             webbrowser.open(server_url(cfg))
         return
+
+    validate_startup_environment()
 
     run_server(background=args.background)
 

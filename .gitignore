@@ -12,7 +12,10 @@ background_agent.log
 config/agent.pid
 build/
 dist/
+dist_*/
 *.spec
+tmp_run/
+tmp_run.zip
 src/run_pipeline_old.py
 src/run_pipeline_old2.py
 src/run_pipeline_old_3.py
