@@ -16,6 +16,9 @@ dist_*/
 *.spec
 tmp_run/
 tmp_run.zip
+tmp_packaged_runtime_test/
+tmp_public_packaged_smoke/
+tmp_pyinstaller_extract/
 src/run_pipeline_old.py
 src/run_pipeline_old2.py
 src/run_pipeline_old_3.py

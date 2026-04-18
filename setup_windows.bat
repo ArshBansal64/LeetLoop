@@ -12,7 +12,6 @@ echo LeetLoop - Setup
 echo ======================================
 echo.
 
-REM Check if Python is installed
 where python >nul 2>nul
 if %errorlevel% neq 0 (
     echo ERROR: Python is not installed or not in PATH
@@ -22,7 +21,6 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM Get Python version
 for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
 echo Detected Python %PYTHON_VERSION%
 echo.
@@ -34,7 +32,6 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Create virtual environment if it doesn't exist
 if not exist ".venv" (
     echo Creating virtual environment...
     python -m venv .venv
@@ -67,21 +64,27 @@ if errorlevel 1 (
 echo [OK] Dependencies installed
 echo.
 
-REM Check for .env file
-if not exist ".env" (
+python src\env_file_utils.py needs-config .env
+if errorlevel 1 (
+    echo [OK] .env already configured
+) else (
     echo.
     echo ======================================
     echo Configuration Required
     echo ======================================
     echo.
 
-    if exist ".env.example" (
-        copy /Y ".env.example" ".env" >nul
-        echo [OK] Created .env from .env.example
+    if not exist ".env" (
+        if exist ".env.example" (
+            copy /Y ".env.example" ".env" >nul
+            echo [OK] Created .env from .env.example
+        ) else (
+            echo ERROR: .env.example was not found
+            pause
+            exit /b 1
+        )
     ) else (
-        echo ERROR: .env.example was not found
-        pause
-        exit /b 1
+        echo [OK] Existing .env is missing required values and will be updated
     )
 
     echo.
@@ -120,13 +123,10 @@ if not exist ".env" (
         exit /b 1
     )
 
-    > .tmp_openai_key.txt echo(!OPENAI_KEY!
-    > .tmp_leetcode_session.txt echo(!LEETCODE_SESSION_VALUE!
-    > .tmp_leetcode_csrf.txt echo(!LEETCODE_CSRF_VALUE!
-    python -c "from pathlib import Path; p = Path('.env'); content = p.read_text(encoding='utf-8'); openai_key = Path('.tmp_openai_key.txt').read_text(encoding='utf-8').strip(); leetcode_session = Path('.tmp_leetcode_session.txt').read_text(encoding='utf-8').strip(); leetcode_csrf = Path('.tmp_leetcode_csrf.txt').read_text(encoding='utf-8').strip(); content = content.replace('OPENAI_API_KEY=your_openai_api_key_here', 'OPENAI_API_KEY=' + openai_key); content = content.replace('LEETCODE_SESSION=your_leetcode_session_here', 'LEETCODE_SESSION=' + leetcode_session); content = content.replace('LEETCODE_CSRFTOKEN=your_leetcode_csrf_here', 'LEETCODE_CSRFTOKEN=' + leetcode_csrf); p.write_text(content, encoding='utf-8')"
-    del /q .tmp_openai_key.txt >nul 2>nul
-    del /q .tmp_leetcode_session.txt >nul 2>nul
-    del /q .tmp_leetcode_csrf.txt >nul 2>nul
+    set "LEETLOOP_SETUP_OPENAI_API_KEY=!OPENAI_KEY!"
+    set "LEETLOOP_SETUP_LEETCODE_SESSION=!LEETCODE_SESSION_VALUE!"
+    set "LEETLOOP_SETUP_LEETCODE_CSRFTOKEN=!LEETCODE_CSRF_VALUE!"
+    python src\env_file_utils.py update .env
     if errorlevel 1 (
         echo ERROR: Failed to update .env with the required values
         pause
@@ -134,8 +134,6 @@ if not exist ".env" (
     )
 
     echo [OK] Configuration saved to .env
-) else (
-    echo [OK] .env already configured
 )
 
 echo.

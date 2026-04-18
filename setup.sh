@@ -12,7 +12,6 @@ echo "LeetLoop - Setup"
 echo "======================================"
 echo ""
 
-# Check if Python is installed
 if ! command -v python3 &> /dev/null; then
     echo "ERROR: Python 3 is not installed"
     echo "Please install Python 3.10+ using your package manager:"
@@ -31,7 +30,6 @@ if ! python3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) e
     exit 1
 fi
 
-# Create virtual environment if it doesn't exist
 if [ ! -d ".venv" ]; then
     echo "Creating virtual environment..."
     python3 -m venv .venv
@@ -53,20 +51,24 @@ pip install -r requirements.txt -q
 echo "[OK] Dependencies installed"
 echo ""
 
-# Check for .env file
-if [ ! -f ".env" ]; then
+if python3 src/env_file_utils.py needs-config .env
+then
     echo "======================================"
     echo "Configuration Required"
     echo "======================================"
     echo ""
 
-    if [ -f ".env.example" ]; then
-        cp .env.example .env
-        chmod 600 .env
-        echo "[OK] Created .env from .env.example"
+    if [ ! -f ".env" ]; then
+        if [ -f ".env.example" ]; then
+            cp .env.example .env
+            chmod 600 .env
+            echo "[OK] Created .env from .env.example"
+        else
+            echo "ERROR: .env.example was not found"
+            exit 1
+        fi
     else
-        echo "ERROR: .env.example was not found"
-        exit 1
+        echo "[OK] Existing .env is missing required values and will be updated"
     fi
 
     echo ""
@@ -102,25 +104,10 @@ if [ ! -f ".env" ]; then
         exit 1
     fi
 
-    OPENAI_KEY="$OPENAI_KEY" LEETCODE_SESSION_VALUE="$LEETCODE_SESSION_VALUE" LEETCODE_CSRF_VALUE="$LEETCODE_CSRF_VALUE" python3 - <<'PY'
-import os
-from pathlib import Path
-path = Path('.env')
-content = path.read_text(encoding='utf-8')
-content = content.replace(
-    'OPENAI_API_KEY=your_openai_api_key_here',
-    f"OPENAI_API_KEY={os.environ['OPENAI_KEY']}"
-)
-content = content.replace(
-    'LEETCODE_SESSION=your_leetcode_session_here',
-    f"LEETCODE_SESSION={os.environ['LEETCODE_SESSION_VALUE']}"
-)
-content = content.replace(
-    'LEETCODE_CSRFTOKEN=your_leetcode_csrf_here',
-    f"LEETCODE_CSRFTOKEN={os.environ['LEETCODE_CSRF_VALUE']}"
-)
-path.write_text(content, encoding='utf-8')
-PY
+    LEETLOOP_SETUP_OPENAI_API_KEY="$OPENAI_KEY" \
+    LEETLOOP_SETUP_LEETCODE_SESSION="$LEETCODE_SESSION_VALUE" \
+    LEETLOOP_SETUP_LEETCODE_CSRFTOKEN="$LEETCODE_CSRF_VALUE" \
+    python3 src/env_file_utils.py update .env
     chmod 600 .env
 
     echo "[OK] Configuration saved to .env"

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 import time
 import webbrowser
@@ -15,8 +16,43 @@ if sys.version_info < (3, 10):
 
 from dotenv import load_dotenv
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SRC_DIR = PROJECT_ROOT / "src"
+
+def is_frozen() -> bool:
+    return bool(getattr(sys, "frozen", False))
+
+
+def detect_resource_root() -> Path:
+    if is_frozen():
+        meipass = getattr(sys, "_MEIPASS", "")
+        if meipass:
+            return Path(meipass)
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent.parent
+
+
+def detect_app_home(resource_root: Path) -> Path:
+    override = os.environ.get("LEETLOOP_HOME", "").strip()
+    if override:
+        return Path(override).expanduser().resolve()
+
+    if not is_frozen():
+        return resource_root
+
+    if sys.platform == "win32":
+        base = Path(os.environ.get("APPDATA") or (Path.home() / "AppData" / "Roaming"))
+        return base / "LeetLoop"
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "LeetLoop"
+    return Path(os.environ.get("XDG_DATA_HOME") or (Path.home() / ".local" / "share")) / "LeetLoop"
+
+
+RESOURCE_ROOT = detect_resource_root()
+APP_HOME = detect_app_home(RESOURCE_ROOT)
+SRC_DIR = RESOURCE_ROOT / "src"
+
+os.environ["LEETLOOP_RESOURCE_ROOT"] = str(RESOURCE_ROOT)
+os.environ["LEETLOOP_HOME"] = str(APP_HOME)
+
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
@@ -34,11 +70,38 @@ from run_service import (
     server_url,
     spawn_background_agent,
     stop_recorded_agent,
+    validate_startup_environment,
     wait_for_server,
 )
 
-ENV_PATH = PROJECT_ROOT / ".env"
-ENV_TEMPLATE_PATH = PROJECT_ROOT / ".env.example"
+ENV_PATH = APP_HOME / ".env"
+ENV_TEMPLATE_PATH = RESOURCE_ROOT / ".env.example"
+
+
+def ensure_runtime_environment() -> None:
+    APP_HOME.mkdir(parents=True, exist_ok=True)
+    (APP_HOME / "history").mkdir(parents=True, exist_ok=True)
+
+    config_src = RESOURCE_ROOT / "config"
+    config_dst = APP_HOME / "config"
+    config_dst.mkdir(parents=True, exist_ok=True)
+    for name in ("config.json", "app_config.json"):
+        src = config_src / name
+        dst = config_dst / name
+        if src.exists() and not dst.exists():
+            shutil.copy2(src, dst)
+
+    examples_src = RESOURCE_ROOT / "examples"
+    examples_dst = APP_HOME / "examples"
+    if examples_src.exists():
+        examples_dst.mkdir(parents=True, exist_ok=True)
+        for child in examples_src.iterdir():
+            target = examples_dst / child.name
+            if child.is_file() and not target.exists():
+                shutil.copy2(child, target)
+
+    if ENV_TEMPLATE_PATH.exists() and not ENV_PATH.exists():
+        shutil.copy2(ENV_TEMPLATE_PATH, ENV_PATH)
 
 
 def write_env_values(values: dict[str, str]) -> None:
@@ -70,8 +133,8 @@ def write_env_values(values: dict[str, str]) -> None:
 
 
 def setup_env_first_run() -> None:
-    """Prompt for all required credentials before launching."""
     enforce_supported_python()
+    ensure_runtime_environment()
 
     if ENV_PATH.exists():
         load_dotenv(ENV_PATH, override=True)
@@ -81,8 +144,6 @@ def setup_env_first_run() -> None:
         print()
         print(missing_credentials_message(missing, ENV_PATH))
         print()
-    elif ENV_TEMPLATE_PATH.exists():
-        ENV_PATH.write_text(ENV_TEMPLATE_PATH.read_text(encoding="utf-8"), encoding="utf-8")
 
     print()
     print("=" * 60)
@@ -121,14 +182,28 @@ def setup_env_first_run() -> None:
         raise SystemExit(1)
 
     print()
-    print("Setup complete! Configuration saved to .env")
+    print(f"Setup complete! Configuration saved to {ENV_PATH}")
     print()
 
 
 def main() -> None:
-    """Main launcher entry point."""
+    args = set(sys.argv[1:])
     enforce_supported_python()
-    os.chdir(str(PROJECT_ROOT))
+    ensure_runtime_environment()
+    os.chdir(str(APP_HOME))
+
+    if "--run-pipeline" in args:
+        load_dotenv(ENV_PATH, override=True)
+        from run_pipeline import main as run_pipeline_main
+        run_pipeline_main()
+        return
+
+    if "--background-agent" in args:
+        load_dotenv(ENV_PATH, override=True)
+        validate_startup_environment()
+        from run_service import run_server
+        run_server(background=True)
+        return
 
     setup_env_first_run()
 

@@ -20,7 +20,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from startup_checks import missing_credentials_message, missing_env_file_message
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
+PROJECT_ROOT = os.path.abspath(os.environ.get("LEETLOOP_HOME") or os.path.join(BASE_DIR, ".."))
+RESOURCE_ROOT = os.path.abspath(os.environ.get("LEETLOOP_RESOURCE_ROOT") or PROJECT_ROOT)
 ENV_PATH = os.path.join(PROJECT_ROOT, ".env")
 load_dotenv(dotenv_path=ENV_PATH)
 

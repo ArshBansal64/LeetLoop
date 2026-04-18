@@ -34,7 +34,8 @@ from startup_checks import (
 )
 
 BASE_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = BASE_DIR.parent
+PROJECT_ROOT = Path(os.environ.get("LEETLOOP_HOME") or BASE_DIR.parent).resolve()
+RESOURCE_ROOT = Path(os.environ.get("LEETLOOP_RESOURCE_ROOT") or PROJECT_ROOT).resolve()
 ENV_PATH = PROJECT_ROOT / ".env"
 HISTORY_DIR = PROJECT_ROOT / "history"
 CONFIG_DIR = PROJECT_ROOT / "config"
@@ -369,7 +370,7 @@ def trigger_run(reason: str = "manual") -> bool:
 def run_pipeline_job(reason: str):
     env = os.environ.copy()
     env["LEETLOOP_OPEN_BROWSER"] = "0"
-    cmd = [sys.executable, str(BASE_DIR / "run_pipeline.py")]
+    cmd = planner_command()
     app_config = load_app_config()
     attempt_total = int(app_config.get("scheduled_retry_attempts", 3)) if reason == "schedule" else 1
     attempt_total = max(1, attempt_total)
@@ -864,7 +865,23 @@ def background_python_executable() -> str:
     return sys.executable
 
 
+def running_frozen() -> bool:
+    return bool(getattr(sys, "frozen", False))
+
+
+def launcher_executable() -> str:
+    return sys.executable
+
+
+def planner_command() -> list[str]:
+    if running_frozen():
+        return [launcher_executable(), "--run-pipeline"]
+    return [sys.executable, str(BASE_DIR / "run_pipeline.py")]
+
+
 def background_command() -> list[str]:
+    if running_frozen():
+        return [launcher_executable(), "--background-agent"]
     return [background_python_executable(), str(BASE_DIR / "run_service.py"), "--background"]
 
 
@@ -930,14 +947,31 @@ def install_autostart() -> str:
     if system == "Windows":
         target = startup_file_windows()
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(
-            f'@echo off\ncd /d "{PROJECT_ROOT}"\n"{python_path}" "{script_path}" --background\n',
-            encoding='utf-8',
-        )
+        if running_frozen():
+            target.write_text(
+                f'@echo off\ncd /d "{PROJECT_ROOT}"\n"{launcher_executable()}" --background-agent\n',
+                encoding='utf-8',
+            )
+        else:
+            target.write_text(
+                f'@echo off\ncd /d "{PROJECT_ROOT}"\n"{python_path}" "{script_path}" --background\n',
+                encoding='utf-8',
+            )
         return f"Launch at login enabled via {target}"
     if system == "Darwin":
         target = startup_file_macos()
         target.parent.mkdir(parents=True, exist_ok=True)
+        if running_frozen():
+            program_args = (
+                f'    <string>{launcher_executable()}</string>\n'
+                '    <string>--background-agent</string>\n'
+            )
+        else:
+            program_args = (
+                f'    <string>{python_path}</string>\n'
+                f'    <string>{script_path}</string>\n'
+                '    <string>--background</string>\n'
+            )
         plist = (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
@@ -946,9 +980,7 @@ def install_autostart() -> str:
             '  <key>Label</key><string>com.leetloop.agent</string>\n'
             '  <key>ProgramArguments</key>\n'
             '  <array>\n'
-            f'    <string>{python_path}</string>\n'
-            f'    <string>{script_path}</string>\n'
-            '    <string>--background</string>\n'
+            f'{program_args}'
             '  </array>\n'
             f'  <key>WorkingDirectory</key><string>{PROJECT_ROOT}</string>\n'
             '  <key>RunAtLoad</key><true/>\n'
