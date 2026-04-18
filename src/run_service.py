@@ -516,10 +516,57 @@ def title_to_slug(title: str) -> str:
     return slug
 
 
+def normalize_plan_title(title: str) -> str:
+    value = re.sub(r"^\d+\.\s*", "", str(title or "").strip())
+    value = re.sub(r"^(Redo|Learn)\s+", "", value, flags=re.IGNORECASE)
+    return value.rstrip(".").strip().lower()
+
+
+def infer_badge_from_action_text(task_text: str, action_text: str) -> tuple[str, str] | None:
+    normalized = normalize_plan_title(task_text)
+    if not normalized:
+        return None
+
+    for raw_line in str(action_text or "").splitlines():
+        line = re.sub(r"^\d+\.\s*", "", raw_line.strip())
+        if not line:
+            continue
+        lowered = line.lower()
+        candidate = normalize_plan_title(line)
+        if candidate != normalized:
+            continue
+        if lowered.startswith("redo "):
+            return ("task-redo", "Review")
+        if lowered.startswith("learn "):
+            return ("task-learn", "Learn")
+        if "review" in lowered:
+            return ("task-redo", "Review")
+        if "learn" in lowered:
+            return ("task-learn", "Learn")
+    return None
+
+
+def infer_item_badge(
+    task_text: str,
+    primary_action: str | None = None,
+    secondary_action: str | None = None,
+    stretch_action: str | None = None,
+) -> tuple[str, str]:
+    for action_text in (primary_action, secondary_action, stretch_action):
+        inferred = infer_badge_from_action_text(task_text, str(action_text or ""))
+        if inferred:
+            return inferred
+
+    return ("task-generic", "Task")
+
+
 def parse_plan_items(
     tldr: str | None,
     problem_metadata: dict | None = None,
     problem_reasons: list[str] | None = None,
+    primary_action: str | None = None,
+    secondary_action: str | None = None,
+    stretch_action: str | None = None,
 ) -> list[dict[str, str]]:
     problem_metadata = problem_metadata or {}
     raw_lines = [line.strip() for line in str(tldr or "").splitlines() if line.strip()]
@@ -542,6 +589,13 @@ def parse_plan_items(
 
         task_text = task_text.rstrip(".")
         if task_text:
+            if badge == "Task":
+                css, badge = infer_item_badge(
+                    task_text,
+                    primary_action=primary_action,
+                    secondary_action=secondary_action,
+                    stretch_action=stretch_action,
+                )
             items.append({
                 "css": css,
                 "badge": badge,
@@ -566,11 +620,19 @@ def parse_plan_items(
                     split_parts = reason_titles
                     matched_parts = reason_titles
             if len(matched_parts) >= 2:
-                items = [{
-                    "css": "task-generic",
-                    "badge": "Task",
-                    "name": part,
-                } for part in split_parts]
+                items = []
+                for part in split_parts:
+                    inferred_css, inferred_badge = infer_item_badge(
+                        part,
+                        primary_action=primary_action,
+                        secondary_action=secondary_action,
+                        stretch_action=stretch_action,
+                    )
+                    items.append({
+                        "css": inferred_css,
+                        "badge": inferred_badge,
+                        "name": part,
+                    })
 
     # Final fallback: derive ordered tasks from problem reasons when TLDR is not structured enough.
     if len(items) <= 1 and problem_reasons:
@@ -581,9 +643,15 @@ def parse_plan_items(
                 continue
             title = match.group(1).strip().rstrip(".")
             if title:
+                inferred_css, inferred_badge = infer_item_badge(
+                    title,
+                    primary_action=primary_action,
+                    secondary_action=secondary_action,
+                    stretch_action=stretch_action,
+                )
                 derived_items.append({
-                    "css": "task-generic",
-                    "badge": "Task",
+                    "css": inferred_css,
+                    "badge": inferred_badge,
                     "name": title,
                 })
         if len(derived_items) >= 2:
@@ -596,8 +664,18 @@ def format_plan_html(
     tldr: str,
     problem_metadata: dict | None = None,
     problem_reasons: list[str] | None = None,
+    primary_action: str | None = None,
+    secondary_action: str | None = None,
+    stretch_action: str | None = None,
 ) -> str:
-    items_data = parse_plan_items(tldr, problem_metadata, problem_reasons)
+    items_data = parse_plan_items(
+        tldr,
+        problem_metadata,
+        problem_reasons,
+        primary_action,
+        secondary_action,
+        stretch_action,
+    )
     if not items_data:
         return '<div class="plan-empty">No recommendation yet.</div>'
 
@@ -643,7 +721,14 @@ def format_why_now_html(text: str) -> str:
     return ''.join(f'<p class="why-paragraph">{html.escape(sentence)}</p>' for sentence in sentences)
 
 
-def format_problem_reasons_html(reasons, tldr: str | None = None, problem_metadata: dict | None = None) -> str:
+def format_problem_reasons_html(
+    reasons,
+    tldr: str | None = None,
+    problem_metadata: dict | None = None,
+    primary_action: str | None = None,
+    secondary_action: str | None = None,
+    stretch_action: str | None = None,
+) -> str:
     reasons = [str(x).strip() for x in (reasons or []) if str(x).strip()]
     if not reasons:
         return '<div class="problem-reasons-empty">No problem-specific explanation yet.</div>'
@@ -654,7 +739,14 @@ def format_problem_reasons_html(reasons, tldr: str | None = None, problem_metada
             "badge": item["badge"],
             "name": item["name"],
         }
-        for item in parse_plan_items(tldr, problem_metadata, reasons)
+        for item in parse_plan_items(
+            tldr,
+            problem_metadata,
+            reasons,
+            primary_action,
+            secondary_action,
+            stretch_action,
+        )
     ]
 
     # Build items with just problem index + badge + explanation (no name redundancy)
@@ -1026,6 +1118,9 @@ def build_page(selected_run_name: str | None = None):
     confidence = recommendation.get("confidence", "unknown") if recommendation else "unknown"
     target_shape = (((buckets or {}).get("target_shape")) or {})
     problem_metadata = recommendation.get("problem_metadata", {}) if recommendation else {}
+    primary_action = recommendation.get("primary_action", "") if recommendation else ""
+    secondary_action = recommendation.get("secondary_action", "") if recommendation else ""
+    stretch_action = recommendation.get("stretch_action", "") if recommendation else ""
 
     selected_run_name = run_dir.name if run_dir else None
     run_names = [p.name for p in run_dirs]
@@ -1033,9 +1128,23 @@ def build_page(selected_run_name: str | None = None):
     newer_run_name = run_names[selected_index + 1] if selected_index != -1 and selected_index < len(run_names) - 1 else None
     older_run_name = run_names[selected_index - 1] if selected_index > 0 else None
 
-    plan_html = format_plan_html(tldr, problem_metadata, problem_reasons)
+    plan_html = format_plan_html(
+        tldr,
+        problem_metadata,
+        problem_reasons,
+        primary_action,
+        secondary_action,
+        stretch_action,
+    )
     why_html = format_why_now_html(why_now)
-    problem_reasons_html = format_problem_reasons_html(problem_reasons, tldr, problem_metadata)
+    problem_reasons_html = format_problem_reasons_html(
+        problem_reasons,
+        tldr,
+        problem_metadata,
+        primary_action,
+        secondary_action,
+        stretch_action,
+    )
     timezone_name = current_timezone_name()
     mode_options = planning_mode_options_html(planner_bias)
     timezone_options = timezone_options_html(timezone_name)
