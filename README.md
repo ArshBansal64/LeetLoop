@@ -5,6 +5,8 @@
 
 # LeetLoop
 
+[JUMP TO INSTALLATION](#setup)
+
 LeetLoop is a **local-first decision system for interview preparation**, designed to turn LeetCode practice into a structured, data-driven feedback loop.
 
 Rather than manually tracking progress, LeetLoop ingests solved problems, analyzes patterns, and generates adaptive study plans while preserving full transparency through inspectable artifacts.
