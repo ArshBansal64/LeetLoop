@@ -1,0 +1,593 @@
+{
+  "planning_bias": "balanced_growth",
+  "target_shape": {
+    "review": 2,
+    "gap_fill": 2,
+    "fragile": 0
+  },
+  "candidate_pools": {
+    "review_candidates": [
+      {
+        "title": "Append Characters to String to Make Subsequence",
+        "slug": "append-characters-to-string-to-make-subsequence",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1717791630,
+        "last_ts_iso": "2024-06-07T20:20:30Z",
+        "age_hours": 16301.8,
+        "score": 17.35,
+        "score_components": {
+          "age": 10.95,
+          "low_count": 4.0,
+          "difficulty": 2.4,
+          "priority_bonus": 0.0,
+          "interview_core_bonus": 0.0,
+          "stage_review_bonus": 0.0,
+          "canonical_bonus": 0.0,
+          "deprioritized_penalty": 0.0,
+          "generic_easy_penalty": 0.0,
+          "low_transfer_easy_penalty": 0.0,
+          "obscure_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "old + low-count solved problem with interview value; explicit canonical anchors preferred over noisy stale problems"
+      },
+      {
+        "title": "Get Equal Substrings Within Budget",
+        "slug": "get-equal-substrings-within-budget",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1717376339,
+        "last_ts_iso": "2024-06-03T00:58:59Z",
+        "age_hours": 16417.2,
+        "score": 17.35,
+        "score_components": {
+          "age": 10.95,
+          "low_count": 4.0,
+          "difficulty": 2.4,
+          "priority_bonus": 0.0,
+          "interview_core_bonus": 0.0,
+          "stage_review_bonus": 0.0,
+          "canonical_bonus": 0.0,
+          "deprioritized_penalty": 0.0,
+          "generic_easy_penalty": 0.0,
+          "low_transfer_easy_penalty": 0.0,
+          "obscure_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "old + low-count solved problem with interview value; explicit canonical anchors preferred over noisy stale problems"
+      },
+      {
+        "title": "Number of Steps to Reduce a Number in Binary Representation to One",
+        "slug": "number-of-steps-to-reduce-a-number-in-binary-representation-to-one",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1716951309,
+        "last_ts_iso": "2024-05-29T02:55:09Z",
+        "age_hours": 16535.2,
+        "score": 17.35,
+        "score_components": {
+          "age": 10.95,
+          "low_count": 4.0,
+          "difficulty": 2.4,
+          "priority_bonus": 0.0,
+          "interview_core_bonus": 0.0,
+          "stage_review_bonus": 0.0,
+          "canonical_bonus": 0.0,
+          "deprioritized_penalty": 0.0,
+          "generic_easy_penalty": 0.0,
+          "low_transfer_easy_penalty": 0.0,
+          "obscure_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "old + low-count solved problem with interview value; explicit canonical anchors preferred over noisy stale problems"
+      },
+      {
+        "title": "Longest Consecutive Sequence",
+        "slug": "longest-consecutive-sequence",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1774831384,
+        "last_ts_iso": "2026-03-30T00:43:04Z",
+        "age_hours": 457.4,
+        "score": 16.96,
+        "score_components": {
+          "age": 0.57,
+          "low_count": 4.0,
+          "difficulty": 2.4,
+          "priority_bonus": 4.8,
+          "interview_core_bonus": 4.8,
+          "stage_review_bonus": 5.18,
+          "canonical_bonus": 0.0,
+          "deprioritized_penalty": 0.0,
+          "generic_easy_penalty": 0.0,
+          "low_transfer_easy_penalty": 0.0,
+          "obscure_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "old + low-count solved problem with interview value; explicit canonical anchors preferred over noisy stale problems"
+      },
+      {
+        "title": "Course Schedule",
+        "slug": "course-schedule",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1775098116,
+        "last_ts_iso": "2026-04-02T02:48:36Z",
+        "age_hours": 383.3,
+        "score": 16.86,
+        "score_components": {
+          "age": 0.48,
+          "low_count": 4.0,
+          "difficulty": 2.4,
+          "priority_bonus": 4.8,
+          "interview_core_bonus": 4.8,
+          "stage_review_bonus": 5.18,
+          "canonical_bonus": 0.0,
+          "deprioritized_penalty": 0.0,
+          "generic_easy_penalty": 0.0,
+          "low_transfer_easy_penalty": 0.0,
+          "obscure_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "old + low-count solved problem with interview value; explicit canonical anchors preferred over noisy stale problems"
+      },
+      {
+        "title": "Coin Change",
+        "slug": "coin-change",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1776038630,
+        "last_ts_iso": "2026-04-13T00:03:50Z",
+        "age_hours": 122.1,
+        "score": 16.74,
+        "score_components": {
+          "age": 0.15,
+          "low_count": 4.0,
+          "difficulty": 2.4,
+          "priority_bonus": 4.9,
+          "interview_core_bonus": 4.9,
+          "stage_review_bonus": 5.29,
+          "canonical_bonus": 0.0,
+          "deprioritized_penalty": 0.0,
+          "generic_easy_penalty": 0.0,
+          "low_transfer_easy_penalty": 0.0,
+          "obscure_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "old + low-count solved problem with interview value; explicit canonical anchors preferred over noisy stale problems"
+      },
+      {
+        "title": "Trapping Rain Water",
+        "slug": "trapping-rain-water",
+        "difficulty": "Hard",
+        "count": 1,
+        "last_ts": 1776104917,
+        "last_ts_iso": "2026-04-13T18:28:37Z",
+        "age_hours": 103.7,
+        "score": 16.05,
+        "score_components": {
+          "age": 0.13,
+          "low_count": 4.0,
+          "difficulty": 3.6,
+          "priority_bonus": 4.0,
+          "interview_core_bonus": 4.0,
+          "stage_review_bonus": 4.32,
+          "canonical_bonus": 0.0,
+          "deprioritized_penalty": 0.0,
+          "generic_easy_penalty": 0.0,
+          "low_transfer_easy_penalty": 0.0,
+          "obscure_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "old + low-count solved problem with interview value; explicit canonical anchors preferred over noisy stale problems"
+      },
+      {
+        "title": "Merge Intervals",
+        "slug": "merge-intervals",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1774826988,
+        "last_ts_iso": "2026-03-29T23:29:48Z",
+        "age_hours": 458.7,
+        "score": 15.71,
+        "score_components": {
+          "age": 0.57,
+          "low_count": 4.0,
+          "difficulty": 2.4,
+          "priority_bonus": 4.2,
+          "interview_core_bonus": 4.2,
+          "stage_review_bonus": 4.54,
+          "canonical_bonus": 0.0,
+          "deprioritized_penalty": 0.0,
+          "generic_easy_penalty": 0.0,
+          "low_transfer_easy_penalty": 0.0,
+          "obscure_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "old + low-count solved problem with interview value; explicit canonical anchors preferred over noisy stale problems"
+      },
+      {
+        "title": "Group Anagrams",
+        "slug": "group-anagrams",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1774812173,
+        "last_ts_iso": "2026-03-29T19:22:53Z",
+        "age_hours": 462.8,
+        "score": 15.71,
+        "score_components": {
+          "age": 0.58,
+          "low_count": 4.0,
+          "difficulty": 2.4,
+          "priority_bonus": 4.2,
+          "interview_core_bonus": 4.2,
+          "stage_review_bonus": 4.54,
+          "canonical_bonus": 0.0,
+          "deprioritized_penalty": 0.0,
+          "generic_easy_penalty": 0.0,
+          "low_transfer_easy_penalty": 0.0,
+          "obscure_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "old + low-count solved problem with interview value; explicit canonical anchors preferred over noisy stale problems"
+      },
+      {
+        "title": "Search in Rotated Sorted Array",
+        "slug": "search-in-rotated-sorted-array",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1775010514,
+        "last_ts_iso": "2026-04-01T02:28:34Z",
+        "age_hours": 407.7,
+        "score": 15.65,
+        "score_components": {
+          "age": 0.51,
+          "low_count": 4.0,
+          "difficulty": 2.4,
+          "priority_bonus": 4.2,
+          "interview_core_bonus": 4.2,
+          "stage_review_bonus": 4.54,
+          "canonical_bonus": 0.0,
+          "deprioritized_penalty": 0.0,
+          "generic_easy_penalty": 0.0,
+          "low_transfer_easy_penalty": 0.0,
+          "obscure_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "old + low-count solved problem with interview value; explicit canonical anchors preferred over noisy stale problems"
+      },
+      {
+        "title": "Rotting Oranges",
+        "slug": "rotting-oranges",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1774739924,
+        "last_ts_iso": "2026-03-28T23:18:44Z",
+        "age_hours": 482.8,
+        "score": 14.91,
+        "score_components": {
+          "age": 0.6,
+          "low_count": 4.0,
+          "difficulty": 2.4,
+          "priority_bonus": 3.8,
+          "interview_core_bonus": 3.8,
+          "stage_review_bonus": 4.1,
+          "canonical_bonus": 0.0,
+          "deprioritized_penalty": 0.0,
+          "generic_easy_penalty": 0.0,
+          "low_transfer_easy_penalty": 0.0,
+          "obscure_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "old + low-count solved problem with interview value; explicit canonical anchors preferred over noisy stale problems"
+      },
+      {
+        "title": "Kth Largest Element in an Array",
+        "slug": "kth-largest-element-in-an-array",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1776053133,
+        "last_ts_iso": "2026-04-13T04:05:33Z",
+        "age_hours": 118.1,
+        "score": 14.87,
+        "score_components": {
+          "age": 0.15,
+          "low_count": 4.0,
+          "difficulty": 2.4,
+          "priority_bonus": 4.0,
+          "interview_core_bonus": 4.0,
+          "stage_review_bonus": 4.32,
+          "canonical_bonus": 0.0,
+          "deprioritized_penalty": 0.0,
+          "generic_easy_penalty": 0.0,
+          "low_transfer_easy_penalty": 0.0,
+          "obscure_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "old + low-count solved problem with interview value; explicit canonical anchors preferred over noisy stale problems"
+      }
+    ],
+    "gap_fill_candidates": [
+      {
+        "title": "Minimum Window Substring",
+        "slug": "minimum-window-substring",
+        "difficulty": "Hard",
+        "score": 12.08,
+        "score_components": {
+          "difficulty": 4.5,
+          "interview_core_bonus": 7.7,
+          "medium_stage_bonus": 0.0,
+          "hard_stage_penalty": 0.12,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "elite sliding-window flagship",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Largest Rectangle in Histogram",
+        "slug": "largest-rectangle-in-histogram",
+        "difficulty": "Hard",
+        "score": 10.59,
+        "score_components": {
+          "difficulty": 4.5,
+          "interview_core_bonus": 6.44,
+          "medium_stage_bonus": 0.0,
+          "hard_stage_penalty": 0.35,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "canonical hard monotonic-stack problem",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Serialize and Deserialize Binary Tree",
+        "slug": "serialize-and-deserialize-binary-tree",
+        "difficulty": "Hard",
+        "score": 10.59,
+        "score_components": {
+          "difficulty": 4.5,
+          "interview_core_bonus": 6.44,
+          "medium_stage_bonus": 0.0,
+          "hard_stage_penalty": 0.35,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "major tree/design interview pattern",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Daily Temperatures",
+        "slug": "daily-temperatures",
+        "difficulty": "Medium",
+        "score": 10.55,
+        "score_components": {
+          "difficulty": 3.0,
+          "interview_core_bonus": 7.0,
+          "medium_stage_bonus": 0.55,
+          "hard_stage_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "canonical monotonic-stack problem",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Longest Increasing Subsequence",
+        "slug": "longest-increasing-subsequence",
+        "difficulty": "Medium",
+        "score": 10.13,
+        "score_components": {
+          "difficulty": 3.0,
+          "interview_core_bonus": 6.58,
+          "medium_stage_bonus": 0.55,
+          "hard_stage_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "core DP and binary-search pattern",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Edit Distance",
+        "slug": "edit-distance",
+        "difficulty": "Hard",
+        "score": 10.03,
+        "score_components": {
+          "difficulty": 4.5,
+          "interview_core_bonus": 5.88,
+          "medium_stage_bonus": 0.0,
+          "hard_stage_penalty": 0.35,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "major DP pattern",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Word Ladder",
+        "slug": "word-ladder",
+        "difficulty": "Hard",
+        "score": 10.03,
+        "score_components": {
+          "difficulty": 4.5,
+          "interview_core_bonus": 5.88,
+          "medium_stage_bonus": 0.0,
+          "hard_stage_penalty": 0.35,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "classic BFS shortest-path pattern",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Binary Tree Maximum Path Sum",
+        "slug": "binary-tree-maximum-path-sum",
+        "difficulty": "Hard",
+        "score": 9.89,
+        "score_components": {
+          "difficulty": 4.5,
+          "interview_core_bonus": 5.74,
+          "medium_stage_bonus": 0.0,
+          "hard_stage_penalty": 0.35,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "high-value tree DP interview anchor",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Sliding Window Maximum",
+        "slug": "sliding-window-maximum",
+        "difficulty": "Hard",
+        "score": 9.89,
+        "score_components": {
+          "difficulty": 4.5,
+          "interview_core_bonus": 5.74,
+          "medium_stage_bonus": 0.0,
+          "hard_stage_penalty": 0.35,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "important deque/sliding-window flagship",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Find Median from Data Stream",
+        "slug": "find-median-from-data-stream",
+        "difficulty": "Hard",
+        "score": 9.75,
+        "score_components": {
+          "difficulty": 4.5,
+          "interview_core_bonus": 5.6,
+          "medium_stage_bonus": 0.0,
+          "hard_stage_penalty": 0.35,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "canonical two-heaps design problem",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Find Minimum in Rotated Sorted Array",
+        "slug": "find-minimum-in-rotated-sorted-array",
+        "difficulty": "Medium",
+        "score": 9.57,
+        "score_components": {
+          "difficulty": 3.0,
+          "interview_core_bonus": 6.02,
+          "medium_stage_bonus": 0.55,
+          "hard_stage_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "core rotated-array binary-search anchor",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Validate Binary Search Tree",
+        "slug": "validate-binary-search-tree",
+        "difficulty": "Medium",
+        "score": 9.57,
+        "score_components": {
+          "difficulty": 3.0,
+          "interview_core_bonus": 6.02,
+          "medium_stage_bonus": 0.55,
+          "hard_stage_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "high-frequency tree invariant question",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Task Scheduler",
+        "slug": "task-scheduler",
+        "difficulty": "Medium",
+        "score": 9.15,
+        "score_components": {
+          "difficulty": 3.0,
+          "interview_core_bonus": 5.6,
+          "medium_stage_bonus": 0.55,
+          "hard_stage_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "common counting/greedy scheduling pattern",
+        "recently_mentioned": false
+      },
+      {
+        "title": "Top K Frequent Elements",
+        "slug": "top-k-frequent-elements",
+        "difficulty": "Medium",
+        "score": 9.15,
+        "score_components": {
+          "difficulty": 3.0,
+          "interview_core_bonus": 5.6,
+          "medium_stage_bonus": 0.55,
+          "hard_stage_penalty": 0.0,
+          "recent_plan_penalty": 0.0
+        },
+        "why": "common bucket/heap frequency pattern",
+        "recently_mentioned": false
+      }
+    ],
+    "fragile_candidates": [
+      {
+        "title": "Trapping Rain Water",
+        "slug": "trapping-rain-water",
+        "difficulty": "Hard",
+        "count": 1,
+        "last_ts": 1776104917,
+        "last_ts_iso": "2026-04-13T18:28:37Z",
+        "age_hours": 103.7,
+        "score": 6.39,
+        "why": "recent but outside cooldown and still low-count / fragile"
+      },
+      {
+        "title": "LRU Cache",
+        "slug": "lru-cache",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1776056172,
+        "last_ts_iso": "2026-04-13T04:56:12Z",
+        "age_hours": 117.2,
+        "score": 5.42,
+        "why": "recent but outside cooldown and still low-count / fragile"
+      },
+      {
+        "title": "Kth Largest Element in an Array",
+        "slug": "kth-largest-element-in-an-array",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1776053133,
+        "last_ts_iso": "2026-04-13T04:05:33Z",
+        "age_hours": 118.1,
+        "score": 5.4,
+        "why": "recent but outside cooldown and still low-count / fragile"
+      },
+      {
+        "title": "Coin Change",
+        "slug": "coin-change",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1776038630,
+        "last_ts_iso": "2026-04-13T00:03:50Z",
+        "age_hours": 122.1,
+        "score": 5.32,
+        "why": "recent but outside cooldown and still low-count / fragile"
+      },
+      {
+        "title": "Minimum Size Subarray Sum",
+        "slug": "minimum-size-subarray-sum",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1775965093,
+        "last_ts_iso": "2026-04-12T03:38:13Z",
+        "age_hours": 142.5,
+        "score": 4.91,
+        "why": "recent but outside cooldown and still low-count / fragile"
+      },
+      {
+        "title": "Majority Element II",
+        "slug": "majority-element-ii",
+        "difficulty": "Medium",
+        "count": 1,
+        "last_ts": 1775963054,
+        "last_ts_iso": "2026-04-12T03:04:14Z",
+        "age_hours": 143.1,
+        "score": 4.9,
+        "why": "recent but outside cooldown and still low-count / fragile"
+      }
+    ],
+    "cooldown_excluded": []
+  }
+}

@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 
+from collections import Counter
 import json
 import os
 import re
@@ -60,6 +61,15 @@ DEFAULT_GAP_FILL_CANDIDATES = [
     {"title": "Validate Binary Search Tree", "slug": "validate-binary-search-tree", "difficulty": "Medium", "reason": "high-frequency tree invariant question"},
     {"title": "Sliding Window Maximum", "slug": "sliding-window-maximum", "difficulty": "Hard", "reason": "important deque/sliding-window flagship"},
     {"title": "Trapping Rain Water", "slug": "trapping-rain-water", "difficulty": "Hard", "reason": "elite two-pointer / stack interview anchor"},
+    {"title": "Binary Tree Level Order Traversal", "slug": "binary-tree-level-order-traversal", "difficulty": "Medium", "reason": "core BFS tree traversal pattern"},
+    {"title": "Lowest Common Ancestor of a Binary Tree", "slug": "lowest-common-ancestor-of-a-binary-tree", "difficulty": "Medium", "reason": "classic recursive tree interview anchor"},
+    {"title": "Subarray Sum Equals K", "slug": "subarray-sum-equals-k", "difficulty": "Medium", "reason": "important prefix-sum hashmap pattern"},
+    {"title": "Find All Anagrams in a String", "slug": "find-all-anagrams-in-a-string", "difficulty": "Medium", "reason": "canonical fixed-window string pattern"},
+    {"title": "Search in Rotated Sorted Array", "slug": "search-in-rotated-sorted-array", "difficulty": "Medium", "reason": "flagship rotated-array binary search problem"},
+    {"title": "Rotting Oranges", "slug": "rotting-oranges", "difficulty": "Medium", "reason": "classic multi-source BFS interview pattern"},
+    {"title": "Best Time to Buy and Sell Stock", "slug": "best-time-to-buy-and-sell-stock", "difficulty": "Easy", "reason": "foundational greedy / prefix-min interview anchor"},
+    {"title": "Container With Most Water", "slug": "container-with-most-water", "difficulty": "Medium", "reason": "canonical two-pointer interview problem"},
+    {"title": "Jump Game", "slug": "jump-game", "difficulty": "Medium", "reason": "high-frequency greedy reachability pattern"},
 ]
 
 INTERVIEW_CORE_PRIORITY_BONUS = {
@@ -93,6 +103,76 @@ INTERVIEW_CORE_PRIORITY_BONUS = {
     "find-all-anagrams-in-a-string": 3.8,
     "trapping-rain-water": 4.0,
     "best-time-to-buy-and-sell-stock": 3.5,
+}
+
+GAP_FILL_CATEGORY = {
+    "minimum-window-substring": "sliding_window",
+    "daily-temperatures": "monotonic_stack",
+    "serialize-and-deserialize-binary-tree": "trees_design",
+    "largest-rectangle-in-histogram": "monotonic_stack",
+    "edit-distance": "dynamic_programming",
+    "task-scheduler": "greedy_counting",
+    "kth-largest-element-in-an-array": "heaps_selection",
+    "word-ladder": "graphs_bfs",
+    "binary-tree-maximum-path-sum": "trees_dp",
+    "find-median-from-data-stream": "heaps_design",
+    "longest-increasing-subsequence": "dynamic_programming",
+    "number-of-islands": "graphs_traversal",
+    "course-schedule": "graphs_toposort",
+    "top-k-frequent-elements": "heaps_hashing",
+    "product-of-array-except-self": "arrays_prefix",
+    "longest-consecutive-sequence": "arrays_hashing",
+    "group-anagrams": "hashing_grouping",
+    "find-minimum-in-rotated-sorted-array": "binary_search",
+    "merge-intervals": "intervals",
+    "coin-change": "dynamic_programming",
+    "validate-binary-search-tree": "trees_invariants",
+    "sliding-window-maximum": "sliding_window",
+    "trapping-rain-water": "two_pointers_stack",
+    "binary-tree-level-order-traversal": "trees_bfs",
+    "lowest-common-ancestor-of-a-binary-tree": "trees_recursion",
+    "subarray-sum-equals-k": "prefix_sum",
+    "find-all-anagrams-in-a-string": "sliding_window",
+    "search-in-rotated-sorted-array": "binary_search",
+    "rotting-oranges": "graphs_bfs",
+    "best-time-to-buy-and-sell-stock": "arrays_greedy",
+    "container-with-most-water": "two_pointers",
+    "jump-game": "greedy",
+}
+
+GAP_FILL_STAGE = {
+    "minimum-window-substring": "advanced",
+    "daily-temperatures": "foundation",
+    "serialize-and-deserialize-binary-tree": "advanced",
+    "largest-rectangle-in-histogram": "advanced",
+    "edit-distance": "advanced",
+    "task-scheduler": "foundation",
+    "kth-largest-element-in-an-array": "foundation",
+    "word-ladder": "advanced",
+    "binary-tree-maximum-path-sum": "advanced",
+    "find-median-from-data-stream": "advanced",
+    "longest-increasing-subsequence": "advanced",
+    "number-of-islands": "foundation",
+    "course-schedule": "foundation",
+    "top-k-frequent-elements": "foundation",
+    "product-of-array-except-self": "foundation",
+    "longest-consecutive-sequence": "foundation",
+    "group-anagrams": "foundation",
+    "find-minimum-in-rotated-sorted-array": "foundation",
+    "merge-intervals": "foundation",
+    "coin-change": "foundation",
+    "validate-binary-search-tree": "foundation",
+    "sliding-window-maximum": "advanced",
+    "trapping-rain-water": "advanced",
+    "binary-tree-level-order-traversal": "foundation",
+    "lowest-common-ancestor-of-a-binary-tree": "foundation",
+    "subarray-sum-equals-k": "foundation",
+    "find-all-anagrams-in-a-string": "foundation",
+    "search-in-rotated-sorted-array": "foundation",
+    "rotting-oranges": "foundation",
+    "best-time-to-buy-and-sell-stock": "foundation",
+    "container-with-most-water": "foundation",
+    "jump-game": "foundation",
 }
 
 CANONICAL_REVIEW_BONUS = {
@@ -448,25 +528,40 @@ def get_interview_core_priority_bonus(config: Dict[str, Any]) -> Dict[str, float
 
 
 def solved_count_profile(solved_count: int) -> Dict[str, float]:
-    if solved_count < 80:
+    if solved_count < 25:
         return {
             "review_core_multiplier": 1.15,
-            "medium_gap_bonus": 1.1,
-            "hard_gap_penalty": 0.9,
-            "hard_anchor_threshold": 5.0,
+            "medium_gap_bonus": 1.45,
+            "hard_gap_penalty": 4.1,
+            "hard_anchor_threshold": 6.4,
+            "foundation_bonus": 5.0,
+            "advanced_bonus": -6.0,
         }
-    if solved_count < 180:
+    if solved_count < 100:
         return {
             "review_core_multiplier": 1.08,
-            "medium_gap_bonus": 0.55,
-            "hard_gap_penalty": 0.35,
-            "hard_anchor_threshold": 5.2,
+            "medium_gap_bonus": 1.0,
+            "hard_gap_penalty": 2.1,
+            "hard_anchor_threshold": 6.0,
+            "foundation_bonus": 2.8,
+            "advanced_bonus": -3.0,
+        }
+    if solved_count < 220:
+        return {
+            "review_core_multiplier": 1.04,
+            "medium_gap_bonus": 0.35,
+            "hard_gap_penalty": 0.45,
+            "hard_anchor_threshold": 5.4,
+            "foundation_bonus": 0.7,
+            "advanced_bonus": 0.35,
         }
     return {
         "review_core_multiplier": 1.0,
         "medium_gap_bonus": 0.0,
         "hard_gap_penalty": 0.0,
         "hard_anchor_threshold": 5.4,
+        "foundation_bonus": -0.6,
+        "advanced_bonus": 1.6,
     }
 
 
@@ -506,14 +601,195 @@ def age_hours_from_ts(ts: Any, ref_now: datetime.datetime) -> float:
 
 
 def recently_mentioned(title: str, history: List[Dict[str, Any]]) -> bool:
+    return recent_mention_count(title, history) > 0
+
+
+def recent_mention_count(title: str, history: List[Dict[str, Any]], lookback: int = 6) -> int:
     if not title:
-        return False
+        return 0
     needle = title.lower()
-    for item in history:
+    count = 0
+    for item in history[-lookback:]:
         for field in ["tldr", "why_now", "primary_action", "secondary_action", "stretch_action"]:
             if needle in str(item.get(field, "")).lower():
-                return True
-    return False
+                count += 1
+                break
+    return count
+
+
+def extract_plan_titles_from_memory(item: Dict[str, Any]) -> List[str]:
+    titles: List[str] = []
+    raw_tldr = str(item.get("tldr", ""))
+    for raw_line in raw_tldr.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        line = re.sub(r"^\d+\.\s*", "", line)
+        title = re.sub(r"^(Redo|Learn)\s+", "", line, flags=re.IGNORECASE).strip().rstrip(".")
+        if title:
+            titles.append(title)
+
+    if len(titles) <= 1:
+        for reason in item.get("problem_reasons", []) or []:
+            match = re.match(r"^\s*(.+?)\s*:", str(reason).strip())
+            if match:
+                title = match.group(1).strip().rstrip(".")
+                if title:
+                    titles.append(title)
+
+    deduped: List[str] = []
+    seen = set()
+    for title in titles:
+        normalized = title.lower()
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        deduped.append(title)
+    return deduped
+
+
+def build_recent_gap_fill_context(
+    history: List[Dict[str, Any]],
+    gap_fill_catalog: List[Dict[str, Any]],
+    lookback: int = 6,
+) -> Dict[str, Counter]:
+    title_to_item = {
+        str(item.get("title", "")).strip().lower(): item
+        for item in gap_fill_catalog
+        if str(item.get("title", "")).strip()
+    }
+    title_counts: Counter = Counter()
+    slug_counts: Counter = Counter()
+    category_counts: Counter = Counter()
+
+    for plan in history[-lookback:]:
+        for title in extract_plan_titles_from_memory(plan):
+            normalized = title.lower()
+            item = title_to_item.get(normalized)
+            if not item:
+                continue
+            slug = str(item.get("slug", "")).strip()
+            category = GAP_FILL_CATEGORY.get(slug, "general")
+            title_counts[normalized] += 1
+            if slug:
+                slug_counts[slug] += 1
+            category_counts[category] += 1
+
+    return {
+        "title_counts": title_counts,
+        "slug_counts": slug_counts,
+        "category_counts": category_counts,
+    }
+
+
+def take_diverse_gap_fill_candidates(candidates: List[Dict[str, Any]], limit: int) -> List[Dict[str, Any]]:
+    picked: List[Dict[str, Any]] = []
+    category_counts: Counter = Counter()
+
+    for candidate in candidates:
+        category = candidate.get("category", "general")
+        if category_counts[category] >= 2:
+            continue
+        picked.append(candidate)
+        category_counts[category] += 1
+        if len(picked) >= limit:
+            return picked
+
+    for candidate in candidates:
+        if candidate in picked:
+            continue
+        picked.append(candidate)
+        if len(picked) >= limit:
+            break
+
+    return picked
+
+
+def build_learning_profile(
+    snapshot: Dict[str, Any],
+    history: List[Dict[str, Any]],
+    config: Dict[str, Any],
+    candidate_pools: Dict[str, Any],
+) -> Dict[str, Any]:
+    problems = snapshot.get("problems", [])
+    ref_now = parse_snapshot_now(snapshot)
+    solved_by_category: Dict[str, List[Dict[str, Any]]] = {}
+
+    for problem in problems:
+        slug = str(problem.get("slug", "")).strip()
+        category = GAP_FILL_CATEGORY.get(slug)
+        if not category:
+            continue
+        solved_by_category.setdefault(category, []).append(problem)
+
+    category_summary = []
+    for category in sorted({value for value in GAP_FILL_CATEGORY.values()}):
+        solved_items = solved_by_category.get(category, [])
+        sorted_items = sorted(
+            solved_items,
+            key=lambda item: (
+                item.get("count", 1) or 1,
+                age_hours_from_ts(item.get("last_ts"), ref_now),
+            ),
+        )
+        category_summary.append({
+            "category": category,
+            "solved_count": len(solved_items),
+            "sample_titles": [item.get("title") for item in sorted_items[:3]],
+            "recent_recommendation_count": next(
+                (
+                    entry.get("recent_recommendation_count", 0)
+                    for entry in candidate_pools.get("gap_fill_coverage_summary", [])
+                    if entry.get("category") == category
+                ),
+                0,
+            ),
+        })
+
+    undercovered_categories = [
+        entry for entry in category_summary
+        if entry["solved_count"] == 0
+    ][:8]
+
+    stale_or_fragile_solves = []
+    for problem in problems:
+        slug = str(problem.get("slug", "")).strip()
+        count = problem.get("count", 1) or 1
+        age_hours = age_hours_from_ts(problem.get("last_ts"), ref_now)
+        category = GAP_FILL_CATEGORY.get(slug, "uncategorized")
+        if count <= 2 or age_hours >= 24 * 30:
+            stale_or_fragile_solves.append({
+                "title": problem.get("title"),
+                "slug": slug,
+                "difficulty": problem.get("difficulty"),
+                "count": count,
+                "age_days": round(age_hours / 24.0, 1) if age_hours != float("inf") else None,
+                "category": category,
+            })
+
+    stale_or_fragile_solves.sort(
+        key=lambda item: (
+            item["count"],
+            -(item["age_days"] or 0),
+            item["title"] or "",
+        )
+    )
+
+    solved_titles = [problem.get("title") for problem in problems if problem.get("title")]
+    recent_plan_titles = []
+    for item in history[-6:]:
+        recent_plan_titles.extend(extract_plan_titles_from_memory(item))
+
+    return {
+        "solved_count": len(problems),
+        "difficulty_breakdown": summarize_snapshot(snapshot)["difficulty_breakdown"],
+        "category_summary": category_summary,
+        "undercovered_categories": undercovered_categories,
+        "stale_or_fragile_solves": stale_or_fragile_solves[:20],
+        "recent_plan_titles": recent_plan_titles[-24:],
+        "solved_titles_sample": solved_titles[:120],
+        "recommended_target_shape": get_target_shape(config, len(problems)),
+    }
 
 
 def format_activity_item(item):
@@ -989,12 +1265,20 @@ def get_recent_plan_memory():
     return history_plans
 
 
-def get_target_shape(config: Dict[str, Any]) -> Dict[str, int]:
+def get_target_shape(config: Dict[str, Any], solved_count: int) -> Dict[str, int]:
     planning_bias = config.get("planning_bias", "balanced_growth")
     if planning_bias == "interview_maintenance":
+        if solved_count < 40:
+            return {"review": 2, "gap_fill": 2, "fragile": 0}
         return {"review": 3, "gap_fill": 1, "fragile": 0}
     if planning_bias == "aggressive_gap_fill":
+        if solved_count >= 180:
+            return {"review": 2, "gap_fill": 2, "fragile": 0}
         return {"review": 1, "gap_fill": 3, "fragile": 0}
+    if solved_count < 20:
+        return {"review": 1, "gap_fill": 3, "fragile": 0}
+    if solved_count >= 180:
+        return {"review": 3, "gap_fill": 1, "fragile": 0}
     return {"review": 2, "gap_fill": 2, "fragile": 0}
 
 
@@ -1005,11 +1289,18 @@ def build_candidate_pools(snapshot: Dict[str, Any], history: List[Dict[str, Any]
     review_priority_bonus = get_review_priority_bonus(config)
     review_deprioritized_slugs = get_review_deprioritized_slugs(config)
     interview_core_bonus = get_interview_core_priority_bonus(config)
+    gap_fill_catalog = get_gap_fill_candidates_from_config(config)
+    recent_gap_fill_context = build_recent_gap_fill_context(history, gap_fill_catalog)
     profile = solved_count_profile(len(problems))
 
     review_candidates = []
     fragile_candidates = []
     cooldown_excluded = []
+    solved_gap_category_counts = Counter(
+        GAP_FILL_CATEGORY.get(slug)
+        for slug in solved_slugs
+        if GAP_FILL_CATEGORY.get(slug)
+    )
 
     for p in problems:
         slug = p.get("slug")
@@ -1104,24 +1395,38 @@ def build_candidate_pools(snapshot: Dict[str, Any], history: List[Dict[str, Any]
     fragile_candidates.sort(key=lambda x: (-x["score"], x["age_hours"]))
 
     gap_fill_candidates = []
-    for item in get_gap_fill_candidates_from_config(config):
+    for item in gap_fill_catalog:
         if item["slug"] in solved_slugs:
             continue
 
-        recent_penalty = 1.5 if recently_mentioned(item["title"], history) else 0.0
+        title_key = item["title"].lower()
+        title_repeat_count = recent_gap_fill_context["title_counts"].get(title_key, 0)
+        category = GAP_FILL_CATEGORY.get(item["slug"], "general")
+        category_repeat_count = recent_gap_fill_context["category_counts"].get(category, 0)
         interview_bonus = interview_core_bonus.get(item["slug"], 0.0)
         medium_stage_bonus = profile["medium_gap_bonus"] if item["difficulty"] == "Medium" else 0.0
+        stage = GAP_FILL_STAGE.get(item["slug"], "foundation")
+        stage_bonus = profile["foundation_bonus"] if stage == "foundation" else profile["advanced_bonus"]
+        category_mastery_count = solved_gap_category_counts.get(category, 0)
+        category_gap_bonus = max(0.0, 2.8 - min(category_mastery_count, 3) * 0.9)
+        category_novelty_bonus = 1.1 if category_mastery_count == 0 else 0.0
+        recent_title_penalty = title_repeat_count * 3.1
+        recent_category_penalty = category_repeat_count * 1.45
         hard_stage_penalty = 0.0
         if item["difficulty"] == "Hard" and profile["hard_gap_penalty"] > 0:
             hard_stage_penalty = profile["hard_gap_penalty"]
             if interview_bonus >= profile["hard_anchor_threshold"]:
                 hard_stage_penalty *= 0.35
         score = (
-            difficulty_score(item["difficulty"]) * 1.5 +
-            interview_bonus * 1.4 +
+            difficulty_score(item["difficulty"]) * 1.35 +
+            interview_bonus * 0.9 +
             medium_stage_bonus -
+            stage_bonus +
+            category_gap_bonus +
+            category_novelty_bonus -
             hard_stage_penalty -
-            recent_penalty
+            recent_title_penalty -
+            recent_category_penalty
         )
 
         gap_fill_candidates.append({
@@ -1130,23 +1435,43 @@ def build_candidate_pools(snapshot: Dict[str, Any], history: List[Dict[str, Any]
             "difficulty": item["difficulty"],
             "score": round(score, 2),
             "score_components": {
-                "difficulty": round(difficulty_score(item["difficulty"]) * 1.5, 2),
-                "interview_core_bonus": round(interview_bonus * 1.4, 2),
+                "difficulty": round(difficulty_score(item["difficulty"]) * 1.35, 2),
+                "interview_core_bonus": round(interview_bonus * 0.9, 2),
                 "medium_stage_bonus": round(medium_stage_bonus, 2),
+                "stage_bonus": round(stage_bonus, 2),
+                "category_gap_bonus": round(category_gap_bonus, 2),
+                "category_novelty_bonus": round(category_novelty_bonus, 2),
                 "hard_stage_penalty": round(hard_stage_penalty, 2),
-                "recent_plan_penalty": recent_penalty,
+                "recent_title_penalty": round(recent_title_penalty, 2),
+                "recent_category_penalty": round(recent_category_penalty, 2),
             },
             "why": item["reason"],
-            "recently_mentioned": recently_mentioned(item["title"], history),
+            "recently_mentioned": title_repeat_count > 0,
+            "recent_mention_count": title_repeat_count,
+            "recent_category_count": category_repeat_count,
+            "category": category,
+            "stage": stage,
+            "category_mastery_count": category_mastery_count,
         })
 
     gap_fill_candidates.sort(key=lambda x: (-x["score"], x["title"]))
+    gap_fill_candidates = take_diverse_gap_fill_candidates(gap_fill_candidates, 24)
+
+    all_gap_categories = sorted({value for value in GAP_FILL_CATEGORY.values()})
+    coverage_summary = []
+    for category in all_gap_categories:
+        coverage_summary.append({
+            "category": category,
+            "solved_count": solved_gap_category_counts.get(category, 0),
+            "recent_recommendation_count": recent_gap_fill_context["category_counts"].get(category, 0),
+        })
 
     return {
-        "review_candidates": review_candidates[:12],
-        "gap_fill_candidates": gap_fill_candidates[:16],
+        "review_candidates": review_candidates[:16],
+        "gap_fill_candidates": gap_fill_candidates[:24],
         "fragile_candidates": fragile_candidates[:6],
         "cooldown_excluded": cooldown_excluded[:12],
+        "gap_fill_coverage_summary": coverage_summary[:12],
     }
 
 
@@ -1158,6 +1483,7 @@ def build_prompt(
     config: Dict[str, Any],
     target_shape: Dict[str, int],
     candidate_pools: Dict[str, Any],
+    learning_profile: Dict[str, Any],
 ):
     summary = summarize_snapshot(snapshot)
 
@@ -1178,14 +1504,16 @@ SYSTEM GOAL:
 Pick the smallest high-impact session that improves interview readiness.
 
 IMPORTANT ARCHITECTURE:
-Python has already done the deterministic parts:
-- applied the planning bias
-- computed the target shape
-- excluded very recent cooldown problems from redo pools
-- generated candidate pools for review, gap fill, and fragile reinforcement
+Python has prepared evidence for you:
+- current solved-problem snapshot
+- category coverage summary
+- stale / fragile solve candidates
+- recent recommendation memory
+- a few optional candidate pools for review, gap fill, and fragile reinforcement
 
 Your job is the smart part:
-- choose the final plan from the candidate pools
+- decide what this user should repeat and what they should learn next
+- use the evidence to choose the final plan
 - respect the target shape unless there is a truly strong reason not to
 - explain any deviation clearly
 - produce user-facing explanations, not planner-internal justifications
@@ -1201,13 +1529,20 @@ TARGET SHAPE FOR THIS RUN:
 CORE PRINCIPLE:
 Balanced does NOT mean equal representation.
 Do NOT force symmetry across categories beyond the target shape.
+Do not default to the same famous staple problems across different users when other candidates are comparably strong.
+Favor undercovered categories and avoid repeating recently recommended titles or categories unless the user's snapshot gives a strong reason to do so.
 
 CANDIDATE POOLS:
+These are suggestions, not mandatory picks.
+
 Review candidates:
 {candidate_pools["review_candidates"]}
 
 Gap-fill candidates:
 {candidate_pools["gap_fill_candidates"]}
+
+Gap-fill coverage summary:
+{candidate_pools["gap_fill_coverage_summary"]}
 
 Fragile candidates:
 {candidate_pools["fragile_candidates"]}
@@ -1216,11 +1551,13 @@ Cooldown excluded:
 {candidate_pools["cooldown_excluded"]}
 
 RULES:
-- Prefer choosing from the candidate pools above.
+- Prefer the evidence above over generic interview folklore.
+- You may choose outside the candidate pools if the snapshot and category evidence make that clearly better.
 - Do NOT recommend anything in cooldown_excluded as a redo today.
 - If you deviate from the target shape, explain why explicitly.
 - Fragile reinforcement is optional and should only be used if clearly valuable.
 - Prefer the smallest strong session.
+- Treat repeated recent recommendations as a real cost, not a tie-breaker afterthought.
 - Never exceed {max_primary_review_problems} items in Primary.
 - Total workload should usually stay around 4–5 problems.
 
@@ -1231,10 +1568,10 @@ TLDR RULE:
 - TLDR order must match Primary → Secondary → Stretch.
 - TLDR must be a newline-separated string with exactly one problem per line.
 - Each TLDR line must be numbered in order like:
-  1. Find Minimum in Rotated Sorted Array
-  2. 3Sum
-  3. Daily Temperatures
-  4. Minimum Window Substring
+  1. Merge Intervals
+  2. Top K Frequent Elements
+  3. Number of Islands
+  4. Lowest Common Ancestor of a Binary Tree
 - Do NOT write a prose sentence like "Do these 4 in order: A, B, C, D."
 - Do NOT put multiple problems on one line.
 
@@ -1246,7 +1583,30 @@ IMPORTANT NOTES:
 - Use "generated_at" as the current reference time for recency comparisons.
 - Use timestamps and counts heavily.
 - Treat old + low count as weak mastery.
+- Use the category summary and missing-category evidence heavily.
 - Output ONLY valid JSON.
+
+LEARNING PROFILE:
+Solved count:
+{learning_profile["solved_count"]}
+
+Difficulty breakdown:
+{learning_profile["difficulty_breakdown"]}
+
+Category coverage summary:
+{learning_profile["category_summary"]}
+
+Most undercovered categories:
+{learning_profile["undercovered_categories"]}
+
+Stale or fragile solves:
+{learning_profile["stale_or_fragile_solves"]}
+
+Recent plan titles:
+{learning_profile["recent_plan_titles"]}
+
+Solved titles sample:
+{learning_profile["solved_titles_sample"]}
 
 USER EXPLANATION RULES:
 - why_now_summary must be short, concrete, and user-facing.
@@ -1272,7 +1632,7 @@ Return JSON with exactly this shape:
   "run_id": "{run_id}",
   "generated_at": "{iso_utc(now_utc())}",
   "date": "{now_in_planner_timezone(config).date().isoformat()}",
-  "tldr": "1. Find Minimum in Rotated Sorted Array\n2. 3Sum\n3. Daily Temperatures\n4. Minimum Window Substring",
+  "tldr": "1. Merge Intervals\n2. Top K Frequent Elements\n3. Number of Islands\n4. Lowest Common Ancestor of a Binary Tree",
   "why_now_summary": "...",
   "problem_reasons": [
     "...",
@@ -1679,14 +2039,16 @@ def main():
 
     emit_progress(3, 6, "Scoring review and gap-fill candidates")
     history_plans = get_recent_plan_memory()
-    target_shape = get_target_shape(config)
+    target_shape = get_target_shape(config, len(snapshot.get("problems", [])))
     candidate_pools = build_candidate_pools(snapshot, history_plans, config)
+    learning_profile = build_learning_profile(snapshot, history_plans, config, candidate_pools)
 
     save_json(snapshot_path, snapshot)
     save_json(candidate_buckets_path, {
         "planning_bias": config.get("planning_bias", "balanced_growth"),
         "target_shape": target_shape,
         "candidate_pools": candidate_pools,
+        "learning_profile": learning_profile,
     })
 
     emit_progress(4, 6, "Preparing GPT planning prompt")
@@ -1698,6 +2060,7 @@ def main():
         config=config,
         target_shape=target_shape,
         candidate_pools=candidate_pools,
+        learning_profile=learning_profile,
     )
 
     with open(prompt_path, "w", encoding="utf-8") as f:

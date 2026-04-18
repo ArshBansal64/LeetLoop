@@ -1413,7 +1413,7 @@ def build_page(selected_run_name: str | None = None):
         <form method="post" action="/schedule" class="auto-save-form" style="display: flex; gap: 8px; align-items: center;">
           <input type="time" name="daily_time" value="{html.escape(config['daily_time'])}">
           <input type="hidden" name="action" value="update-schedule">
-          <button type="submit" name="action" value="disable-schedule" style="background: #999;">Clear</button>
+          <button type="submit" name="action" value="disable-schedule" style="background: #8d4b2b;">Clear</button>
         </form>
         <div style="height: 12px"></div>
         <div class="inline-label"><div class="label">Launch At Login</div><div class="help-wrap"><button type="button" class="help-button" aria-label="Explain launch at login">?</button><div class="help-tooltip" role="tooltip">Tells your system to start the LeetLoop background agent after login so scheduled runs can happen without manually opening the app first.</div></div></div>
