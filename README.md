@@ -24,7 +24,7 @@ The system uses a hybrid approach:
 - Local-first app
 - Browser-based UI
 - Source install is currently the recommended path
-- macOS/Linux setup is terminal-based
+- macOS/Linux setup is terminal-based and currently best suited to technical users
 
 ---
 

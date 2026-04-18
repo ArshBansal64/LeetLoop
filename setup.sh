@@ -4,6 +4,29 @@
 
 set -e
 
+print_recovery_help() {
+    local failed_command="$1"
+    echo ""
+    echo "Setup did not finish."
+    echo "The failing step was: $failed_command"
+    echo ""
+    echo "Helpful recovery steps:"
+    echo "  1. Confirm Python 3.10+ is installed: python3 --version"
+    echo "  2. If virtualenv creation failed, install venv support:"
+    echo "     macOS:  brew install python"
+    echo "     Ubuntu/Debian: sudo apt-get install python3-venv"
+    echo "     Fedora: sudo dnf install python3"
+    echo "  3. If dependency install failed, try:"
+    echo "     .venv/bin/python -m pip install --upgrade pip"
+    echo "     .venv/bin/python -m pip install -r requirements.txt"
+    echo "  4. If pip still fails, check your network connection and Python build tools."
+    echo ""
+    echo "After fixing the issue, rerun:"
+    echo "  ./setup.sh"
+}
+
+trap 'print_recovery_help "$BASH_COMMAND"' ERR
+
 cd "$(dirname "$0")"
 
 echo ""
@@ -36,6 +59,12 @@ if [ ! -d ".venv" ]; then
     echo "[OK] Virtual environment created"
 else
     echo "[OK] Virtual environment already exists"
+fi
+
+if [ ! -x ".venv/bin/python" ]; then
+    echo "ERROR: Virtual environment exists but .venv/bin/python is missing."
+    echo "Delete .venv and rerun ./setup.sh"
+    exit 1
 fi
 
 echo ""
