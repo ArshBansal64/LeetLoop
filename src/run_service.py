@@ -522,6 +522,23 @@ def normalize_plan_title(title: str) -> str:
     return value.rstrip(".").strip().lower()
 
 
+def build_candidate_type_map(buckets: dict | None) -> dict[str, tuple[str, str]]:
+    candidate_types: dict[str, tuple[str, str]] = {}
+    candidate_pools = ((buckets or {}).get("candidate_pools")) or {}
+    for pool_name, badge_info in {
+        "review_candidates": ("task-redo", "Review"),
+        "gap_fill_candidates": ("task-learn", "Learn"),
+        "fragile_candidates": ("task-redo", "Review"),
+    }.items():
+        for item in candidate_pools.get(pool_name, []) or []:
+            if not isinstance(item, dict):
+                continue
+            title = normalize_plan_title(str(item.get("title", "")))
+            if title:
+                candidate_types[title] = badge_info
+    return candidate_types
+
+
 def infer_badge_from_action_text(task_text: str, action_text: str) -> tuple[str, str] | None:
     normalized = normalize_plan_title(task_text)
     if not normalized:
@@ -551,7 +568,12 @@ def infer_item_badge(
     primary_action: str | None = None,
     secondary_action: str | None = None,
     stretch_action: str | None = None,
+    candidate_types: dict[str, tuple[str, str]] | None = None,
 ) -> tuple[str, str]:
+    normalized = normalize_plan_title(task_text)
+    if normalized and candidate_types and normalized in candidate_types:
+        return candidate_types[normalized]
+
     for action_text in (primary_action, secondary_action, stretch_action):
         inferred = infer_badge_from_action_text(task_text, str(action_text or ""))
         if inferred:
@@ -567,6 +589,7 @@ def parse_plan_items(
     primary_action: str | None = None,
     secondary_action: str | None = None,
     stretch_action: str | None = None,
+    candidate_types: dict[str, tuple[str, str]] | None = None,
 ) -> list[dict[str, str]]:
     problem_metadata = problem_metadata or {}
     raw_lines = [line.strip() for line in str(tldr or "").splitlines() if line.strip()]
@@ -595,6 +618,7 @@ def parse_plan_items(
                     primary_action=primary_action,
                     secondary_action=secondary_action,
                     stretch_action=stretch_action,
+                    candidate_types=candidate_types,
                 )
             items.append({
                 "css": css,
@@ -627,6 +651,7 @@ def parse_plan_items(
                         primary_action=primary_action,
                         secondary_action=secondary_action,
                         stretch_action=stretch_action,
+                        candidate_types=candidate_types,
                     )
                     items.append({
                         "css": inferred_css,
@@ -648,6 +673,7 @@ def parse_plan_items(
                     primary_action=primary_action,
                     secondary_action=secondary_action,
                     stretch_action=stretch_action,
+                    candidate_types=candidate_types,
                 )
                 derived_items.append({
                     "css": inferred_css,
@@ -667,6 +693,7 @@ def format_plan_html(
     primary_action: str | None = None,
     secondary_action: str | None = None,
     stretch_action: str | None = None,
+    candidate_types: dict[str, tuple[str, str]] | None = None,
 ) -> str:
     items_data = parse_plan_items(
         tldr,
@@ -675,6 +702,7 @@ def format_plan_html(
         primary_action,
         secondary_action,
         stretch_action,
+        candidate_types,
     )
     if not items_data:
         return '<div class="plan-empty">No recommendation yet.</div>'
@@ -728,6 +756,7 @@ def format_problem_reasons_html(
     primary_action: str | None = None,
     secondary_action: str | None = None,
     stretch_action: str | None = None,
+    candidate_types: dict[str, tuple[str, str]] | None = None,
 ) -> str:
     reasons = [str(x).strip() for x in (reasons or []) if str(x).strip()]
     if not reasons:
@@ -746,6 +775,7 @@ def format_problem_reasons_html(
             primary_action,
             secondary_action,
             stretch_action,
+            candidate_types,
         )
     ]
 
@@ -1117,6 +1147,7 @@ def build_page(selected_run_name: str | None = None):
     focus_mode = recommendation.get("focus_mode", "unknown") if recommendation else "unknown"
     confidence = recommendation.get("confidence", "unknown") if recommendation else "unknown"
     target_shape = (((buckets or {}).get("target_shape")) or {})
+    candidate_types = build_candidate_type_map(buckets)
     problem_metadata = recommendation.get("problem_metadata", {}) if recommendation else {}
     primary_action = recommendation.get("primary_action", "") if recommendation else ""
     secondary_action = recommendation.get("secondary_action", "") if recommendation else ""
@@ -1135,6 +1166,7 @@ def build_page(selected_run_name: str | None = None):
         primary_action,
         secondary_action,
         stretch_action,
+        candidate_types,
     )
     why_html = format_why_now_html(why_now)
     problem_reasons_html = format_problem_reasons_html(
@@ -1144,6 +1176,7 @@ def build_page(selected_run_name: str | None = None):
         primary_action,
         secondary_action,
         stretch_action,
+        candidate_types,
     )
     timezone_name = current_timezone_name()
     mode_options = planning_mode_options_html(planner_bias)
@@ -1362,33 +1395,33 @@ def build_page(selected_run_name: str | None = None):
         <div style="height: 16px"></div>
         <div class="section-label">Configuration</div>
         <div class="inline-label"><div class="label">Planning mode</div><div class="help-wrap"><button type="button" class="help-button" aria-label="Explain planning mode">?</button><div class="help-tooltip" role="tooltip">Changes the target mix of review vs gap-fill problems. This updates planner config and affects the next run, not the already displayed plan.</div></div></div>
-        <form method="post" action="/planning-bias">
+        <form method="post" action="/planning-bias" class="auto-save-form">
           <select name="planning_bias" required>
             {mode_options}
           </select>
-          <button type="submit">Apply</button>
         </form>
         <div style="height: 12px"></div>
         <div class="inline-label"><div class="label">Timezone</div><div class="help-wrap"><button type="button" class="help-button" aria-label="Explain timezone">?</button><div class="help-tooltip" role="tooltip">Controls how run times are displayed and how the daily schedule is interpreted. New runs will also use this timezone when saved.</div></div></div>
-        <form method="post" action="/timezone">
+        <form method="post" action="/timezone" class="auto-save-form">
           <select name="timezone" required>
             {timezone_options}
           </select>
-          <button type="submit">Save</button>
         </form>
         <div style="height: 12px"></div>
         <div class="inline-label"><div class="label">Daily schedule</div><div class="help-wrap"><button type="button" class="help-button" aria-label="Explain daily schedule">?</button><div class="help-tooltip" role="tooltip">App will run at this time each day (checks every 20s while running)
 </div></div></div>
-        <form method="post" action="/schedule" style="display: flex; gap: 8px; align-items: center;">
+        <form method="post" action="/schedule" class="auto-save-form" style="display: flex; gap: 8px; align-items: center;">
           <input type="time" name="daily_time" value="{html.escape(config['daily_time'])}">
-          <button type="submit" name="action" value="update-schedule">Set</button>
+          <input type="hidden" name="action" value="update-schedule">
           <button type="submit" name="action" value="disable-schedule" style="background: #999;">Clear</button>
         </form>
         <div style="height: 12px"></div>
         <div class="inline-label"><div class="label">Launch At Login</div><div class="help-wrap"><button type="button" class="help-button" aria-label="Explain launch at login">?</button><div class="help-tooltip" role="tooltip">Tells your system to start the LeetLoop background agent after login so scheduled runs can happen without manually opening the app first.</div></div></div>
-        <form method="post" action="/launch-at-login" style="display: flex; gap: 8px; align-items: center;">
-          <button type="submit" name="action" value="enable" style="background: {'#2d8a56' if autostart_label == 'Enabled' else '#999'};">Enable</button>
-          <button type="submit" name="action" value="disable" style="background: {'#b4433c' if autostart_label == 'Disabled' else '#999'};">Disable</button>
+        <form method="post" action="/launch-at-login" class="auto-save-form" style="display: flex; gap: 8px; align-items: center;">
+          <select name="action" required>
+            <option value="enable" {'selected' if autostart_label == 'Enabled' else ''}>Enabled</option>
+            <option value="disable" {'selected' if autostart_label == 'Disabled' else ''}>Disabled</option>
+          </select>
         </form>
         <div style="height: 18px"></div>
         <div class="section-label">Status</div>
@@ -1417,6 +1450,7 @@ def build_page(selected_run_name: str | None = None):
     const HISTORY_STORAGE_KEY = 'leetloop-show-step-history';
     const DETAILS_STORAGE_KEY = 'leetloop-show-run-details';
     const FOLLOW_LATEST_AFTER_RUN_KEY = 'leetloop-follow-latest-after-run';
+    const autoSaveForms = Array.from(document.querySelectorAll('.auto-save-form'));
     
     if (historyToggle && historyWrap) {{
       // Restore state from localStorage
@@ -1495,6 +1529,24 @@ def build_page(selected_run_name: str | None = None):
         }}
       }});
     }}
+
+    autoSaveForms.forEach((form) => {{
+      const primaryControl = form.querySelector('select, input[type="time"]');
+      if (!primaryControl) return;
+
+      primaryControl.addEventListener('change', () => {{
+        const timeInput = form.querySelector('input[type="time"]');
+        if (timeInput && !timeInput.value) {{
+          return;
+        }}
+
+        form.querySelectorAll('button').forEach((button) => {{
+          if (button.value === 'disable-schedule') return;
+          button.disabled = true;
+        }});
+        form.requestSubmit();
+      }});
+    }});
 
     const shouldFollowLatest = sessionStorage.getItem(FOLLOW_LATEST_AFTER_RUN_KEY) === 'true';
     if (!isRunning && shouldFollowLatest && latestRunName) {{

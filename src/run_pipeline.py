@@ -226,6 +226,7 @@ PROBLEM_LOOKUP = {
     "restore ip addresses": (93, "restore-ip-addresses"),
     "reverse linked list ii": (92, "reverse-linked-list-ii"),
     "decode ways": (91, "decode-ways"),
+    "validate binary search tree": (98, "validate-binary-search-tree"),
     "word break": (139, "word-break"),
     "word break ii": (140, "word-break-ii"),
     "lru cache": (146, "lru-cache"),
@@ -280,7 +281,10 @@ PROBLEM_LOOKUP = {
     "find peak element": (162, "find-peak-element"),
     "symmetric tree": (101, "symmetric-tree"),
     "task scheduler": (621, "task-scheduler"),
+    "daily temperatures": (739, "daily-temperatures"),
 }
+
+PROBLEM_LOOKUP_BY_SLUG = {slug: (frontend_id, title) for title, (frontend_id, slug) in PROBLEM_LOOKUP.items()}
 
 
 def now_utc() -> datetime.datetime:
@@ -1337,7 +1341,11 @@ def resp_status_is_auth(status_code: int, error_code: str, error_type: str, mess
     )
 
 
-def enrich_plan_with_problem_metadata(plan_json: Dict[str, Any], snapshot: Dict[str, Any]) -> None:
+def enrich_plan_with_problem_metadata(
+    plan_json: Dict[str, Any],
+    snapshot: Dict[str, Any],
+    candidate_pools: Dict[str, Any] | None = None,
+) -> None:
     """Add problem_metadata (frontend_id, slug) to plan_json based on TLDR titles"""
     tldr = plan_json.get("tldr", "")
     if not tldr:
@@ -1380,6 +1388,16 @@ def enrich_plan_with_problem_metadata(plan_json: Dict[str, Any], snapshot: Dict[
             deduped.append(title)
         return deduped
 
+    candidate_title_to_slug: Dict[str, str] = {}
+    for pool_name in ("review_candidates", "gap_fill_candidates", "fragile_candidates"):
+        for item in ((candidate_pools or {}).get(pool_name) or []):
+            if not isinstance(item, dict):
+                continue
+            title = str(item.get("title", "")).strip()
+            slug = str(item.get("slug", "")).strip()
+            if title and slug:
+                candidate_title_to_slug[title.lower()] = slug
+
     # Build a title->problem mapping from snapshot (case-insensitive)
     snapshot_problems = snapshot.get("problems", [])
     title_to_problem = {p.get("title", "").lower().strip(): p for p in snapshot_problems}
@@ -1407,6 +1425,18 @@ def enrich_plan_with_problem_metadata(plan_json: Dict[str, Any], snapshot: Dict[
                     "slug": slug,
                 }
                 continue
+
+        if not problem:
+            candidate_slug = candidate_title_to_slug.get(title_lower)
+            if candidate_slug:
+                lookup_data = PROBLEM_LOOKUP_BY_SLUG.get(candidate_slug)
+                if lookup_data:
+                    frontend_id, _ = lookup_data
+                    problem_metadata[title] = {
+                        "frontend_id": frontend_id,
+                        "slug": candidate_slug,
+                    }
+                    continue
 
         # If found in snapshot, use it
         if problem:
@@ -1679,7 +1709,7 @@ def main():
     plan_json["date"] = now.date().isoformat()
     
     # Enrich plan with problem metadata (frontend_id, slug)
-    enrich_plan_with_problem_metadata(plan_json, snapshot)
+    enrich_plan_with_problem_metadata(plan_json, snapshot, candidate_pools)
 
     emit_progress(6, 6, "Saving artifacts and final readable plan")
     save_json(recommendation_path, plan_json)
