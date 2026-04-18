@@ -36,6 +36,7 @@ DEFAULT_TIMEZONE = "America/Los_Angeles"
 COOLDOWN_HOURS = 24
 FRAGILE_MIN_HOURS = 24
 FRAGILE_MAX_DAYS = 7
+SOLVE_SESSION_WINDOW_MINUTES = 45
 
 DEFAULT_GAP_FILL_CANDIDATES = [
     {"title": "Minimum Window Substring", "slug": "minimum-window-substring", "difficulty": "Hard", "reason": "elite sliding-window flagship"},
@@ -600,6 +601,30 @@ def age_hours_from_ts(ts: Any, ref_now: datetime.datetime) -> float:
         return float("inf")
 
 
+def collapse_submission_sessions(accepted_submissions: List[Dict[str, Any]]) -> List[int]:
+    timestamps: List[int] = []
+    for submission in accepted_submissions:
+        try:
+            ts = int(submission["timestamp"])
+        except Exception:
+            continue
+        timestamps.append(ts)
+
+    if not timestamps:
+        return []
+
+    timestamps.sort(reverse=True)
+    session_timestamps: List[int] = [timestamps[0]]
+    session_window_seconds = SOLVE_SESSION_WINDOW_MINUTES * 60
+
+    for ts in timestamps[1:]:
+        if session_timestamps[-1] - ts <= session_window_seconds:
+            continue
+        session_timestamps.append(ts)
+
+    return session_timestamps
+
+
 def recently_mentioned(title: str, history: List[Dict[str, Any]]) -> bool:
     return recent_mention_count(title, history) > 0
 
@@ -1068,17 +1093,18 @@ def get_problem_submission_stats(slug):
         sub_block = data["submissionList"]
         submissions = sub_block.get("submissions", []) or []
         accepted = [s for s in submissions if s.get("statusDisplay") == "Accepted"]
+        accepted_sessions = collapse_submission_sessions(accepted)
 
         last_ts = None
-        if accepted:
+        if accepted_sessions:
             try:
-                last_ts = max(int(s["timestamp"]) for s in accepted if s.get("timestamp"))
+                last_ts = max(accepted_sessions)
             except Exception:
                 last_ts = None
 
         return {
             "last_ts": last_ts,
-            "count": len(accepted) if accepted else None,
+            "count": len(accepted_sessions) if accepted_sessions else None,
             "ok": True,
             "error": None,
         }

@@ -1,13 +1,86 @@
 # LeetLoop
 
-LeetLoop is a local LeetCode practice planner that uses your actual solve history to recommend what to work on next.
+LeetLoop is a local-first interview prep planner built in Python that turns your real LeetCode history into a personalized daily practice plan.
 
-It pulls your solved problems from LeetCode, tracks timestamps and solve counts over time, and generates a small, focused daily plan. The goal is simple: spend your time on the highest-impact problems instead of guessing what to practice.
+Instead of guessing what to solve next, LeetLoop pulls your accepted problems from LeetCode through GraphQL, tracks solve timestamps and repetition counts over time, analyzes likely weak spots, and uses the OpenAI Responses API to assemble a focused daily session around review, gap-filling, and interview readiness.
 
-The system uses a hybrid approach:
+Has LeetLoop helped you land an offer? Spotted any issues? Connect with me at https://www.linkedin.com/in/arsh-bansal1/ and share your thoughts!
 
-- Python handles deterministic logic such as cooldown windows, planning bias, and candidate selection
-- GPT handles prioritization, tradeoffs, and the final recommendation
+For new users, here's what to expect:
+
+- Python planning pipeline and local browser app
+- rule-based evidence generation combined with model-driven planning
+- saved run artifacts for debugging and iteration
+- cross-platform source setup for technical users
+- PyInstaller build path for a future desktop-style release
+
+---
+
+## For Developers
+
+LeetLoop is an applied software project at the intersection of:
+
+- product engineering
+- local-first developer tooling
+- recommendation systems
+- authenticated API integration
+- LLM-assisted workflow design
+
+The main technical idea is not "ask GPT what LeetCode problem to do." It is:
+
+1. collect reliable evidence from a user's actual LeetCode history
+2. turn that evidence into structured signals like stale mastery, category coverage, and recent recommendation memory
+3. let the model make the planning tradeoffs from that evidence
+4. preserve each run as inspectable output for debugging and iteration
+
+All developers are encouraged to iterate on this concept.
+
+---
+
+## Technical Highlights
+
+- Python application with a local web UI backed by `ThreadingHTTPServer`
+- Authenticated LeetCode GraphQL ingestion for solved-problem history
+- OpenAI Responses API integration for final recommendation generation
+- Local scheduler and browser-based configuration flow
+- Structured planning artifacts such as `snapshot.json`, `prompt.txt`, and `candidate_buckets.json`
+- Cross-platform setup scripts for Windows, macOS, and Linux
+- Lightweight GitHub Actions CI and PyInstaller build infrastructure
+
+---
+
+## Tech Stack
+
+- Language: Python 3.10+
+- HTTP / UI server: Python `http.server` with `ThreadingHTTPServer`
+- External APIs: LeetCode GraphQL, OpenAI Responses API
+- Core libraries: `requests`, `python-dotenv`, `tzdata`
+- Packaging: PyInstaller
+- Automation: shell / batch setup scripts, built-in local scheduler
+- CI: GitHub Actions (In Development)
+
+---
+
+## Demo
+
+```md
+![LeetLoop dashboard](docs/images/dashboard.png)
+![Each run's history is stored with date/time (includes prompt, raw response, python-computed problem buckets)](docs/images/history.png)
+```
+
+### Early Usage Signals
+
+- Tested pre-release personally for 2 weeks as a daily interview-prep tool
+- Pre-beta tested by 22 users
+- Designed to retain a rolling memory of recent progress so recently studied gaps get a short retention break instead of being recommended again immediately
+
+### Early Feedback
+
+Paraphrased from early testers:
+
+- "It does a good job of remembering what I worked on recently instead of telling me to grind the same weak area every day."
+- "The recommendations feel more structured than just picking random LeetCode 150 problems."
+- "It recommended me problems I have technically solved before, but I realized I wasn't comfortable with them when I retried them."
 
 ---
 
@@ -28,87 +101,82 @@ The system uses a hybrid approach:
 
 ---
 
-## What it does
+## What It Does
 
 - Fetches solved problem history from LeetCode
 - Tracks when you last solved each problem and how many times
 - Detects changes between runs
 - Preserves recommendation history across runs through the local `history/` folder
-- Applies a cooldown so problems you just solved are not immediately recommended again
+- Applies cooldown rules so problems you just solved are not immediately recommended again
 - Supports different planning styles depending on your goal
-- Outputs both a readable plan and structured data for debugging
+- Outputs both a readable plan and structured artifacts for debugging and analysis
 
 ---
 
-## Recommended usage
+## Architecture
+
+LeetLoop is built as a small local application with a Python planning pipeline and a browser UI.
+
+### Core flow
+
+1. Pull solved problems from LeetCode
+2. Build a fresh snapshot of the user's current solve history
+3. Compare it with the previous snapshot to detect activity
+4. Compute structured evidence:
+   - stale / low-count review opportunities
+   - unsolved gap-fill candidates
+   - category coverage summaries
+   - recent recommendation memory
+5. Send that evidence to the OpenAI Responses API to choose the final session and explain it
+6. Save all run artifacts locally for inspection
+
+### Main modules
+
+- [src/run_pipeline.py](C:\LeetLoop\src\run_pipeline.py)
+  Core planning pipeline: LeetCode fetch, evidence generation, OpenAI prompt construction, validation, and artifact output.
+
+- [src/run_service.py](C:\LeetLoop\src\run_service.py)
+  Local browser UI, scheduler, settings handling, and run orchestration built on Python's `http.server`.
+
+- [src/app_launcher.py](C:\LeetLoop\src\app_launcher.py)
+  Packaged-app entry point and first-run setup path for PyInstaller builds.
+
+- [config/config.json](C:\LeetLoop\config\config.json)
+  Planner behavior tuning such as planning bias and candidate logic.
+
+- [config/app_config.json](C:\LeetLoop\config\app_config.json)
+  Local app behavior such as host, port, browser launch, and schedule.
+
+---
+
+## Recommended Usage
 
 The recommended way to use LeetLoop is as a small local app.
 
 The app:
 
-- shows your latest recommendation in a browser
-- lets you trigger a run manually with a button
+- shows the latest recommendation in a browser
+- lets you trigger a run manually
 - keeps a daily run time in local config
-- runs the planner on a built-in schedule without relying on a hidden OS task
-- keeps all state, credentials, and recommendation history on your own machine
-
-This is simpler and less opaque than relying on a background scheduled script alone.
+- runs the planner on a built-in schedule instead of a hidden OS task
+- keeps state, credentials, and recommendation history on your own machine
 
 ---
 
-## How it works
-
-Each run follows the same flow:
-
-1. Pull your solved problems from LeetCode
-2. Build a snapshot of your current state (timestamps, counts, difficulty)
-3. Compare it with the previous run to detect activity
-4. Generate candidate pools:
-   - review (old, low-count problems)
-   - gap fill (important unsolved problems)
-   - fragile (recent but not yet stable)
-5. Apply config rules (like session size and bias)
-6. Let GPT choose the final plan and explain why
-
----
-
-## Configuration
-
-Planner configuration lives in:
-
-```
-config/config.json
-```
-
-App configuration lives in:
-
-```
-config/app_config.json
-```
-
-`config/config.json` controls planning behavior such as planning bias and candidate tuning.
-
-`config/app_config.json` controls local app behavior such as:
-
-- host
-- port
-- daily run time
-- whether the browser should open when the app starts
-
-### Planning modes
+## Planning Modes
 
 - `balanced_growth`
-  Mix of review and new problems (typically 2 and 2)
+  Mix of review and new problems
 
 - `interview_maintenance`
-  Heavier on review (typically 3 review, 1 new)
+  Heavier on review and retention
 
 - `aggressive_gap_fill`
-  Focus on new patterns (typically 1 review, 3 new)
+  More weight on missing patterns and new learning
 
 ---
 
-## Project structure
+## Project Structure
 
 ```text
 LeetLoop/
@@ -157,6 +225,7 @@ setup_windows.bat
 ```
 
 This will:
+
 - require Python 3.10+
 - create a local virtual environment
 - install Python dependencies
@@ -188,6 +257,7 @@ chmod +x setup.sh
 ```
 
 This will:
+
 - require Python 3.10+
 - create a local virtual environment
 - install Python dependencies
@@ -217,6 +287,7 @@ The packaged launcher exists as a secondary path, but source install is still th
 
 1. Copy `.env.example` to `.env`.
 2. Fill in:
+
 - `OPENAI_API_KEY`
 - `LEETCODE_SESSION`
 - `LEETCODE_CSRFTOKEN`
@@ -267,7 +338,7 @@ The executable will be created in `dist/`.
 
 ---
 
-## Required environment variables
+## Required Environment Variables
 
 `.env.example` contains the required keys:
 
@@ -288,7 +359,7 @@ Notes:
 
 ## Running LeetLoop
 
-### Recommended app mode
+### Recommended App Mode
 
 On Windows:
 
@@ -304,14 +375,14 @@ On macOS / Linux:
 
 This starts the local web app and embedded scheduler.
 
-### First-run commands
+### First-Run Commands
 
 - Windows: `setup_windows.bat` then `run_app.bat`
 - macOS/Linux: `./setup.sh` then `./run_app.sh`
 
-### Quick setup check
+### Quick Setup Check
 
-Run this before launching the app if you want a fast validation pass:
+Run this before launching the app if you want a fast validation pass.
 
 On Windows:
 
@@ -332,7 +403,7 @@ It checks:
 - required credentials
 - config JSON loading
 
-### Direct Python entrypoints
+### Direct Python Entrypoints
 
 Run the app directly:
 
@@ -346,25 +417,27 @@ Run the planner once without the UI:
 python src/run_pipeline.py
 ```
 
-## Daily automation
+---
 
-LeetLoop now supports daily local automation through the built-in app scheduler.
+## Daily Automation
+
+LeetLoop supports daily local automation through the built-in app scheduler.
 
 Why this is the recommended model:
 
 - `history/` persists naturally across runs
-- your credentials stay local in `.env`
-- your daily recommendation output remains private
+- credentials stay local in `.env`
+- recommendation output remains private
 - the schedule is visible inside the app rather than hidden in the OS
 - the same app can both display the latest plan and trigger new runs
 
 ---
 
-## Output
+## Output Artifacts
 
 Each run creates a new folder:
 
-```
+```text
 history/<run_id>/
 ```
 
@@ -377,13 +450,15 @@ With:
 - `plan_memory.json`
 - `candidate_buckets.json`
 
+These artifacts make it easy to inspect what evidence existed, what prompt was sent, and what plan came back.
+
 ---
 
 ## Debugging
 
 If something looks off, start with:
 
-```
+```text
 candidate_buckets.json
 ```
 
@@ -393,22 +468,24 @@ It shows:
 - target shape
 - candidate pools
 - cooldown exclusions
+- learning profile summary
 - score components for ranked candidates
 
 ---
 
-## Design principles
+## Design Principles
 
 - Keep sessions small and realistic
 - Avoid redoing problems too soon
 - Treat old, low-count problems as weak mastery
-- Config controls structure
-- GPT handles prioritization
+- Use deterministic Python logic for evidence and guardrails
+- Use the model for prioritization and tradeoff decisions
 - Keep private user data local by default
+- Preserve enough artifacts to debug planner behavior
 
 ---
 
-## Security notes
+## Security Notes
 
 - `.env` is ignored by Git
 - `history/` is ignored by Git
@@ -419,17 +496,29 @@ It shows:
 
 ## Roadmap
 
-- private phone notifications
-- richer local dashboard
-- better canonical problem detection
-- pattern tracking
-- easier cross-platform app packaging
+- richer pattern taxonomy and coverage tracking
+- stronger recommendation evaluation and comparison tooling
+- more polished history analytics and dashboard views
+- easier cross-platform packaging
+- optional notification and reminder flows
+
+---
+
+## Resume / Portfolio Framing
+
+If you are evaluating this project as portfolio work, the strongest signals are:
+
+- end-to-end product thinking, not just prompt experimentation
+- Python application design across data ingestion, scheduling, UI, and planning
+- real-world API integration with authenticated LeetCode GraphQL access and OpenAI Responses API usage
+- local-first architecture with user data stored on-device
+- debuggable model behavior through saved prompts, candidate pools, and run artifacts
 
 ---
 
 ## Contributing
 
-Feel free to fork and experiment. The project is designed to be simple and easy to modify.
+Feel free to fork and experiment. The project is designed to be understandable, modifiable, and useful as both a tool and a systems project.
 
 ---
 
