@@ -1,7 +1,7 @@
 {
   "host": "127.0.0.1",
   "port": 8765,
-  "daily_time": "03:11",
+  "daily_time": "",
   "open_browser_on_start": true,
   "scheduled_retry_attempts": 3,
   "scheduled_retry_delay_seconds": 300

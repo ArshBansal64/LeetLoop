@@ -1,3 +1,4 @@
+import base64
 import datetime
 import html
 import json
@@ -228,6 +229,24 @@ def current_planning_bias() -> str:
     config = load_planner_config()
     bias = str(config.get("planning_bias", "balanced_growth"))
     return bias if bias in PLANNING_MODE_OPTIONS else "balanced_growth"
+
+
+def inline_image_data_uri(path: Path) -> str:
+    if not path.exists():
+        return ""
+    mime_type = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+    }.get(path.suffix.lower())
+    if not mime_type:
+        return ""
+    try:
+        encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    except Exception:
+        return ""
+    return f"data:{mime_type};base64,{encoded}"
 
 
 def list_run_dirs():
@@ -1133,6 +1152,7 @@ def launch_mode_label() -> str:
 def build_page(selected_run_name: str | None = None):
     config = load_app_config()
     planner_bias = current_planning_bias()
+    logo_data_uri = inline_image_data_uri(RESOURCE_ROOT / "docs" / "images" / "logoname.png")
     run_dirs = list_run_dirs()
     selected_run_dir = resolve_run_dir(selected_run_name)
     run_dir, recommendation, buckets = load_artifacts_for_run(selected_run_dir)
@@ -1213,6 +1233,7 @@ def build_page(selected_run_name: str | None = None):
     .topbar {{ display: grid; grid-template-columns: 320px minmax(0, 1.65fr) minmax(280px, 1fr); gap: 18px; align-items: flex-start; margin-bottom: 28px; }}
     .hero-copy {{ min-width:0; flex: 1 1 680px; max-width: 760px; grid-column: 1 / 3; }}
     h1 {{ font-size: 44px; margin: 0 0 8px; }}
+    .brand-mark {{ display:block; width:min(360px, 100%); height:auto; margin: 0 0 12px; mix-blend-mode: multiply; }}
     .subtitle {{ color: var(--muted); max-width: 760px; line-height: 1.5; }}
     .top-actions {{ display:flex; align-items:center; justify-content:center; gap:10px; margin-top: 48px; grid-column: 3; justify-self: center; }}
     .top-generate {{ padding: 16px 20px; font-size: 19px; line-height: 1; font-weight: 800; border-radius: 18px; box-shadow: 0 14px 30px rgba(23, 89, 74, 0.24); }}
@@ -1296,6 +1317,7 @@ def build_page(selected_run_name: str | None = None):
     .control-actions form {{ margin: 0; }}
     input[type=time], select {{ border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; background: white; }}
     .meta {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }}
+    #dev-status-wrap[hidden] {{ display: none !important; }}
     .timeline {{ position: relative; display: grid; gap: 10px; }}
     .timeline::before {{ content: ''; position: absolute; left: 11px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(180deg, #d8cfc4 0%, #e8dfd3 100%); }}
     .timeline-item {{ position: relative; display: flex; gap: 12px; align-items: center; padding: 12px 14px 12px 0; text-decoration: none; color: inherit; border-radius: 14px; }}
@@ -1316,7 +1338,7 @@ def build_page(selected_run_name: str | None = None):
   <div class="wrap">
     <div class="topbar">
       <div class="hero-copy">
-        <h1>LeetLoop</h1>
+        {f'<img class="brand-mark" src="{logo_data_uri}" alt="LeetLoop">' if logo_data_uri else '<h1>LeetLoop</h1>'}
         <div class="subtitle">A local daily interview-practice app that keeps your LeetCode plan visible, stateful, and scheduled without relying on a hidden OS task.</div>
       </div>
       <div class="top-actions">
@@ -1424,8 +1446,13 @@ def build_page(selected_run_name: str | None = None):
           </select>
         </form>
         <div style="height: 18px"></div>
-        <div class="section-label">Status</div>
-        <div class="meta">
+        <div class="section-label" style="margin: 0;">Status (For Devs)</div>
+        <label class="step-toggle">
+          <input id="show-dev-status" type="checkbox">
+          <span class="caret"></span>
+          <span>Show developer details</span>
+        </label>
+        <div id="dev-status-wrap" class="meta" hidden>
           <div><strong>Next run</strong><br><span class="mono">{html.escape(next_run)}</span></div>
           <div><strong>Last finished</strong><br><span class="mono">{html.escape(format_saved_iso(snapshot['last_finished_at']))}</span></div>
           <div><strong>Focus mode</strong><br><span class="mono">{html.escape(str(focus_mode))}</span></div>
@@ -1447,8 +1474,11 @@ def build_page(selected_run_name: str | None = None):
     const historyWrap = document.getElementById('step-history-wrap');
     const detailsToggle = document.getElementById('show-run-details');
     const detailsWrap = document.getElementById('run-details-wrap');
+    const devStatusToggle = document.getElementById('show-dev-status');
+    const devStatusWrap = document.getElementById('dev-status-wrap');
     const HISTORY_STORAGE_KEY = 'leetloop-show-step-history';
     const DETAILS_STORAGE_KEY = 'leetloop-show-run-details';
+    const DEV_STATUS_STORAGE_KEY = 'leetloop-show-dev-status';
     const FOLLOW_LATEST_AFTER_RUN_KEY = 'leetloop-follow-latest-after-run';
     const autoSaveForms = Array.from(document.querySelectorAll('.auto-save-form'));
     
@@ -1477,6 +1507,18 @@ def build_page(selected_run_name: str | None = None):
         const isChecked = detailsToggle.checked;
         localStorage.setItem(DETAILS_STORAGE_KEY, isChecked);
         detailsWrap.hidden = !isChecked;
+      }});
+    }}
+
+    if (devStatusToggle && devStatusWrap) {{
+      const savedState = localStorage.getItem(DEV_STATUS_STORAGE_KEY) === 'true';
+      devStatusToggle.checked = savedState;
+      devStatusWrap.hidden = !savedState;
+
+      devStatusToggle.addEventListener('change', () => {{
+        const isChecked = devStatusToggle.checked;
+        localStorage.setItem(DEV_STATUS_STORAGE_KEY, isChecked);
+        devStatusWrap.hidden = !isChecked;
       }});
     }}
     
@@ -1703,7 +1745,8 @@ class LeetLoopHandler(BaseHTTPRequestHandler):
             return self.redirect_home()
 
         if self.path == "/schedule":
-            action = (form.get("action") or [""])[0]
+            action_values = form.get("action") or [""]
+            action = action_values[-1]
             if action == "disable-schedule":
                 config = load_app_config()
                 config["daily_time"] = ""

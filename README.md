@@ -1,3 +1,5 @@
+![](docs/images/logoname.png)
+
 # LeetLoop
 
 LeetLoop is a local-first interview prep planner built in Python that turns your real LeetCode history into a personalized daily practice plan.
