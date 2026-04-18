@@ -1,3 +1,6 @@
+![Status](https://img.shields.io/badge/status-active-brightgreen)
+![Version](https://img.shields.io/badge/version-v0.1.0-blue)
+
 ![](docs/images/logoname.png)
 
 # LeetLoop
@@ -5,7 +8,6 @@
 LeetLoop is a **local-first decision system for interview preparation**, designed to turn LeetCode practice into a structured, data-driven feedback loop.
 
 Rather than manually tracking progress, LeetLoop ingests solved problems, analyzes patterns, and generates adaptive study plans while preserving full transparency through inspectable artifacts.
-
 Built as a **closed-loop system**, where each run updates a persistent dataset of solved problems, enabling adaptive scheduling and continuous improvement.  
 
 Has LeetLoop helped you land an offer? Spotted any issues? Connect with me at https://www.linkedin.com/in/arsh-bansal1/ and share your thoughts!
@@ -220,9 +222,16 @@ LeetLoop/
 
 Source install is the primary supported path right now.
 
+### Option 1: Clone repository (recommended for development)
+git clone https://github.com/ArshBansal64/LeetLoop
+
+### Option 2: Download latest release
+Download a packaged version from the Releases page:
+https://github.com/ArshBansal64/LeetLoop/releases
+
 #### Windows
 
-1. Clone the repository.
+1. Clone the repository/download release.
 2. Run `setup_windows.bat`:
 
 ```bat
@@ -253,7 +262,7 @@ Optional quick validation before launch:
 
 #### macOS / Linux
 
-1. Clone the repository.
+1. Clone the repository/download release.
 2. Open a terminal in the repo and run:
 
 ```bash
@@ -283,10 +292,6 @@ Optional quick validation before launch:
 ```bash
 .venv/bin/python src/run_service.py --check-setup
 ```
-
-### Optional Packaged Launcher
-
-The packaged launcher exists as a secondary path, but source install is still the documented default until the packaged flow is fully proven across platforms.
 
 ### Manual Setup (Advanced)
 
