@@ -1540,8 +1540,8 @@ Python has prepared evidence for you:
 Your job is the smart part:
 - decide what this user should repeat and what they should learn next
 - use the evidence to choose the final plan
-- respect the target shape unless there is a truly strong reason not to
-- explain any deviation clearly
+- follow the target shape exactly
+- explain any unavoidable deviation clearly
 - produce user-facing explanations, not planner-internal justifications
 
 PLANNING BIAS:
@@ -1551,6 +1551,9 @@ TARGET SHAPE FOR THIS RUN:
 - Review problems: {target_shape["review"]}
 - Gap-fill problems: {target_shape["gap_fill"]}
 - Fragile reinforcement problems: {target_shape["fragile"]}
+
+This target shape is the required output mix for the current planning mode.
+Primary + Secondary + Stretch together must contain exactly this many review, gap-fill, and fragile reinforcement problems.
 
 CORE PRINCIPLE:
 Balanced does NOT mean equal representation.
@@ -1580,7 +1583,7 @@ RULES:
 - Prefer the evidence above over generic interview folklore.
 - You may choose outside the candidate pools if the snapshot and category evidence make that clearly better.
 - Do NOT recommend anything in cooldown_excluded as a redo today.
-- If you deviate from the target shape, explain why explicitly.
+- You must follow the target shape exactly unless there are not enough valid candidates for a required bucket. If you cannot follow it, explain the concrete blocking reason in the why_now summary.
 - Fragile reinforcement is optional and should only be used if clearly valuable.
 - Prefer the smallest strong session.
 - Treat repeated recent recommendations as a real cost, not a tie-breaker afterthought.

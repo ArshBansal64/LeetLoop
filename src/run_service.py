@@ -43,6 +43,7 @@ CONFIG_DIR = PROJECT_ROOT / "config"
 APP_CONFIG_PATH = CONFIG_DIR / "app_config.json"
 PLANNER_CONFIG_PATH = CONFIG_DIR / "config.json"
 AGENT_PID_PATH = CONFIG_DIR / "agent.pid"
+SCHEDULER_STATE_PATH = CONFIG_DIR / "scheduler_state.json"
 
 load_dotenv(dotenv_path=ENV_PATH)
 
@@ -185,6 +186,28 @@ def load_planner_config():
 
 def save_planner_config(config):
     save_json(PLANNER_CONFIG_PATH, config)
+
+
+def load_scheduler_state():
+    return load_json(SCHEDULER_STATE_PATH, {})
+
+
+def save_scheduler_state(state):
+    save_json(SCHEDULER_STATE_PATH, state)
+
+
+def recorded_scheduled_date() -> str | None:
+    value = load_scheduler_state().get("last_scheduled_date")
+    return str(value).strip() if value else None
+
+
+def set_recorded_scheduled_date(date_str: str | None) -> None:
+    state = load_scheduler_state()
+    if date_str:
+        state["last_scheduled_date"] = date_str
+    else:
+        state.pop("last_scheduled_date", None)
+    save_scheduler_state(state)
 
 
 def validate_startup_environment() -> None:
@@ -485,7 +508,9 @@ def run_pipeline_job(reason: str):
                     if latest_name:
                         service_state["last_run_date"] = latest_name.split("_")[0]
                     if reason == "schedule":
-                        service_state["last_scheduled_date"] = datetime.datetime.now(datetime.UTC).astimezone(current_timezone()).date().isoformat()
+                        scheduled_date = datetime.datetime.now(datetime.UTC).astimezone(current_timezone()).date().isoformat()
+                        service_state["last_scheduled_date"] = scheduled_date
+                        set_recorded_scheduled_date(scheduled_date)
                 return
 
             if attempt_index < attempt_total:
@@ -1231,11 +1256,10 @@ def build_page(selected_run_name: str | None = None):
     body {{ margin: 0; font-family: Georgia, 'Times New Roman', serif; background: linear-gradient(180deg, #ede6d8 0%, var(--bg) 100%); color: var(--ink); }}
     .wrap {{ max-width: 1280px; margin: 0 auto; padding: 32px 20px 60px; }}
     .topbar {{ display: grid; grid-template-columns: 320px minmax(0, 1.65fr) minmax(280px, 1fr); gap: 18px; align-items: flex-start; margin-bottom: 28px; }}
-    .hero-copy {{ min-width:0; flex: 1 1 680px; max-width: 760px; grid-column: 1 / 3; }}
+    .hero-copy {{ min-width:0; flex: 1 1 680px; max-width: 760px; grid-column: 1 / -1; }}
     h1 {{ font-size: 44px; margin: 0 0 8px; }}
     .brand-mark {{ display:block; width:min(360px, 100%); height:auto; margin: 0 0 12px; mix-blend-mode: multiply; }}
     .subtitle {{ color: var(--muted); max-width: 760px; line-height: 1.5; }}
-    .top-actions {{ display:flex; align-items:center; justify-content:center; gap:10px; margin-top: 48px; grid-column: 3; justify-self: center; }}
     .top-generate {{ padding: 16px 20px; font-size: 19px; line-height: 1; font-weight: 800; border-radius: 18px; box-shadow: 0 14px 30px rgba(23, 89, 74, 0.24); }}
     .top-generate[disabled] {{ background: #b8b0a6; cursor: not-allowed; opacity: 0.7; box-shadow:none; }}
     .shell {{ display: grid; grid-template-columns: 320px minmax(0, 1.65fr) minmax(280px, 1fr); gap: 18px; align-items: start; }}
@@ -1311,6 +1335,13 @@ def build_page(selected_run_name: str | None = None):
     .help-tooltip.is-above::before {{ bottom:-7px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); }}
     .agent-actions {{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }}
     .agent-actions form {{ margin:0; }}
+    .sidebar-cta {{ position: relative; margin: -4px 0 22px; padding: 16px; border: 1px solid #bfd9ce; border-radius: 18px; background: linear-gradient(145deg, #f1faf6 0%, #fffdf8 72%); box-shadow: 0 16px 34px rgba(23, 89, 74, 0.12); overflow: hidden; }}
+    .sidebar-cta::after {{ content: ""; position: absolute; right: -34px; top: -38px; width: 118px; height: 118px; border-radius: 999px; background: rgba(23, 89, 74, 0.09); pointer-events: none; }}
+    .sidebar-cta-copy {{ position: relative; display: grid; gap: 4px; margin-bottom: 12px; }}
+    .sidebar-cta-title {{ font-size: 18px; font-weight: 800; color: var(--ink); }}
+    .sidebar-cta-subtitle {{ color: var(--muted); font-size: 13px; line-height: 1.45; }}
+    .sidebar-cta form {{ position: relative; display: block; margin: 0; }}
+    .sidebar-cta .generate-plan-button {{ display: inline-flex; align-items: center; width: 100%; justify-content: center; border-radius: 16px; min-height: 52px; }}
     .status-row {{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 10px 0 0; flex-wrap:wrap; }}
     .control-row {{ display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }}
     .control-actions {{ display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; min-width: 0; }}
@@ -1331,7 +1362,7 @@ def build_page(selected_run_name: str | None = None):
     .timeline-tag {{ margin-left: auto; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 6px 10px; font-weight: 700; }}
     .timeline-empty {{ color: var(--muted); }}
     .meta div {{ padding: 12px 14px; background: #faf6ef; border-radius: 14px; border: 1px solid var(--line); min-width: 0; overflow-wrap: anywhere; word-break: break-word; }}
-    @media (max-width: 980px) {{ .shell {{ grid-template-columns: 1fr; }} .rail {{ position: static; max-height: none; overflow: visible; }} .topbar {{ align-items: flex-start; gap: 16px; }} .top-actions {{ width: 100%; justify-content: center; margin-top: 0; }} .top-generate {{ width: 100%; justify-content: center; padding: 18px 22px; font-size: 17px; border-radius: 16px; }} h1 {{ font-size: 34px; }} .plan-item {{ font-size: 17px; align-items: flex-start; }} }}
+    @media (max-width: 980px) {{ .shell {{ grid-template-columns: 1fr; }} .rail {{ position: static; max-height: none; overflow: visible; }} .topbar {{ display: block; }} .top-generate {{ width: 100%; justify-content: center; padding: 18px 22px; font-size: 17px; border-radius: 16px; }} h1 {{ font-size: 34px; }} .plan-item {{ font-size: 17px; align-items: flex-start; }} }}
   </style>
 </head>
 <body>
@@ -1340,11 +1371,6 @@ def build_page(selected_run_name: str | None = None):
       <div class="hero-copy">
         {f'<img class="brand-mark" src="{logo_data_uri}" alt="LeetLoop">' if logo_data_uri else '<h1>LeetLoop</h1>'}
         <div class="subtitle">A local daily interview-practice app that keeps your LeetCode plan visible, stateful, and scheduled without relying on a hidden OS task.</div>
-      </div>
-      <div class="top-actions">
-        <form id="run-now-form" method="post" action="/run-now" style="margin: 0; display: inline-flex; width: auto;">
-          <button class="generate-plan-button top-generate" type="submit" style="display:inline-flex; align-items:center; justify-content:center; width:auto; padding: 13px 18px; font-size: 19px; min-height: 0; border-radius: 16px;" {'disabled' if snapshot.get('is_running') else ''}>Generate Plan</button>
-        </form>
       </div>
     </div>
     <div class="shell">
@@ -1365,6 +1391,15 @@ def build_page(selected_run_name: str | None = None):
         <div class="why">{problem_reasons_html}</div>
       </section>
       <aside class="card">
+        <div class="sidebar-cta">
+          <div class="sidebar-cta-copy">
+            <div class="sidebar-cta-title">Generate today&apos;s plan</div>
+            <div class="sidebar-cta-subtitle">Run the planner now using your current schedule, timezone, and planning mode.</div>
+          </div>
+          <form id="run-now-form" method="post" action="/run-now">
+            <button class="generate-plan-button top-generate" type="submit" {'disabled' if snapshot.get('is_running') else ''}>Generate Plan</button>
+          </form>
+        </div>
         <div class="agent-header">
           <div class="section-label" style="margin: 0;">Agent</div>
           <div class="help-wrap">
@@ -1817,21 +1852,30 @@ def scheduler_loop():
 
                 try:
                     sched_hour, sched_min = map(int, daily_time.split(":"))
+                    scheduled_at = now.replace(hour=sched_hour, minute=sched_min, second=0, microsecond=0)
                     with state_lock:
                         already_ran = service_state.get("last_scheduled_date") == today
                         currently_running = service_state.get("is_running", False)
 
-                    is_time_match = (now.hour == sched_hour and now.minute == sched_min)
+                    is_due = now >= scheduled_at
                     
                     if check_count % 6 == 1:  # Log every 60 seconds
-                        print(f"[SCHEDULER] NOW: {now.strftime('%H:%M')} | SCHED: {daily_time} | TZ: {tz_name} | MATCH: {is_time_match} | ALREADY_RAN: {already_ran} | RUNNING: {currently_running}", flush=True)
+                        print(f"[SCHEDULER] NOW: {now.strftime('%H:%M')} | SCHED: {daily_time} | TZ: {tz_name} | DUE: {is_due} | ALREADY_RAN: {already_ran} | RUNNING: {currently_running}", flush=True)
 
-                    if is_time_match and not already_ran and not currently_running:
-                        print(f"[SCHEDULER] *** TRIGGERING RUN at {now.strftime('%H:%M')} (scheduled: {daily_time}) ***", flush=True)
+                    if is_due and not already_ran and not currently_running:
+                        catch_up = now.minute != sched_min or now.hour != sched_hour
+                        trigger_kind = "CATCH-UP RUN" if catch_up else "RUN"
+                        print(f"[SCHEDULER] *** TRIGGERING {trigger_kind} at {now.strftime('%H:%M')} (scheduled: {daily_time}) ***", flush=True)
+                        triggered = trigger_run("schedule")
                         with state_lock:
-                            service_state["last_scheduled_date"] = today
-                            service_state["last_message"] = f"Scheduled run triggered for {daily_time}."
-                        trigger_run("schedule")
+                            if triggered:
+                                service_state["last_scheduled_date"] = today
+                                service_state["last_message"] = (
+                                    f"Scheduled catch-up run triggered for {daily_time}."
+                                    if catch_up
+                                    else f"Scheduled run triggered for {daily_time}."
+                                )
+                                set_recorded_scheduled_date(today)
                 except (ValueError, IndexError) as e:
                     print(f"[SCHEDULER] Parse error: {e}", flush=True)
                     with state_lock:
@@ -1849,7 +1893,7 @@ def scheduler_loop():
 def initialize_state_from_history():
     with state_lock:
         service_state["last_run_date"] = infer_last_run_date_from_history()
-        service_state.setdefault("last_scheduled_date", None)
+        service_state["last_scheduled_date"] = recorded_scheduled_date()
 
 
 def run_server(background: bool = False):
