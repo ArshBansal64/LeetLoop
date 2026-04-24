@@ -1294,17 +1294,9 @@ def get_recent_plan_memory():
 def get_target_shape(config: Dict[str, Any], solved_count: int) -> Dict[str, int]:
     planning_bias = config.get("planning_bias", "balanced_growth")
     if planning_bias == "interview_maintenance":
-        if solved_count < 40:
-            return {"review": 2, "gap_fill": 2, "fragile": 0}
         return {"review": 3, "gap_fill": 1, "fragile": 0}
     if planning_bias == "aggressive_gap_fill":
-        if solved_count >= 180:
-            return {"review": 2, "gap_fill": 2, "fragile": 0}
         return {"review": 1, "gap_fill": 3, "fragile": 0}
-    if solved_count < 20:
-        return {"review": 1, "gap_fill": 3, "fragile": 0}
-    if solved_count >= 180:
-        return {"review": 3, "gap_fill": 1, "fragile": 0}
     return {"review": 2, "gap_fill": 2, "fragile": 0}
 
 
